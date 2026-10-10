@@ -14,10 +14,12 @@ Para una función genérica, actualiza el worktree de `main` mediante fast-forwa
 cd /home/wbolivar/projects/4k4m1m3/gentle-dot-worktrees/main
 git fetch upstream
 git merge --ff-only upstream/main
-git worktree add ../gentle-dot-worktrees/nombre-funcion -b feature/nombre-funcion main
+git -C /home/wbolivar/projects/4k4m1m3/gentle-dot worktree add \
+  /home/wbolivar/projects/4k4m1m3/gentle-dot-worktrees/nombre-funcion \
+  -b feature/nombre-funcion main
 ```
 
-Para personalización exclusiva de ELA, parte de `ela` (por ejemplo `feature/ela-branding`). Prueba la función en su worktree y revisa sus dependencias. Integra los commits elegidos en `ela` con `git cherry-pick` o un merge explícito después de revisar el diff y ejecutar las pruebas. No actives una misma rama en dos worktrees.
+Para personalización exclusiva de ELA, parte de `ela` (por ejemplo `feature/ela-branding`) sustituyendo `main` por `ela` en el comando. Prueba la función en su worktree y revisa sus dependencias. Integra los commits elegidos en `ela` con `git cherry-pick` o un merge explícito después de revisar el diff y ejecutar las pruebas. No actives una misma rama en dos worktrees.
 
 ## Sincronizar cambios oficiales
 
