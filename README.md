@@ -1,213 +1,212 @@
-<!-- markdownlint-disable-next-line MD041 -->
 <a id="top"></a>
 
 <div align="center">
 
-<img width="100%" alt="Gentle Dot banner: the neon rose glowing inside a black circle, the Gentle Dot wordmark, and the tagline Your assistant, always one key away" src="docs/assets/brand/gentle-dot-banner.png" />
+<img src="docs/assets/brand/rose.png" width="88" alt="Rosa original de Gentle Dot" />
 
-<h1>Gentle Dot</h1>
+<h1>ELA — Local AI Desktop Assistant</h1>
 
-<p><strong>A personal assistant that lives on your desktop, remembers what matters, and can use your Mac for you.</strong></p>
-
-
-https://github.com/user-attachments/assets/0c0f4d2d-7e0e-4c35-961a-8816d95a390c
-
+<p><strong>Un asistente personal de escritorio para Linux: IA local, voz y activación en segundo plano.</strong></p>
 
 <p>
-<img src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Web-D7A0B8?style=for-the-badge&labelColor=1A1218" alt="Platform">
-<img src="https://img.shields.io/badge/status-early%20preview-F095C8?style=for-the-badge&labelColor=1A1218" alt="Status: early preview">
-<a href="LICENSE"><img src="https://img.shields.io/badge/MIT-D7A0B8?style=for-the-badge&labelColor=1A1218" alt="License: MIT"></a>
+<img src="https://img.shields.io/badge/Linux-Arch%20%C2%B7%20Hyprland-248BFF?style=for-the-badge&labelColor=0B1220" alt="Linux, Arch y Hyprland">
+<img src="https://img.shields.io/badge/IA%20local-Ollama-248BFF?style=for-the-badge&labelColor=0B1220" alt="IA local con Ollama">
+<a href="LICENSE"><img src="https://img.shields.io/badge/licencia-MIT-248BFF?style=for-the-badge&labelColor=0B1220" alt="Licencia MIT"></a>
 </p>
 
-<p>
-<a href="https://gentlemanprogramming.com/"><strong>Website</strong></a> &bull;
-<a href="docs/install.md"><strong>Install</strong></a> &bull;
-<a href="docs/design.md"><strong>Design</strong></a> &bull;
-<a href="https://github.com/Gentleman-Programming/gentle-ai"><strong>Gentle-AI</strong></a>
-</p>
-
-<br/>
-
-<p>
-Assistants live in a browser tab you have to go find, forget you between chats, and stop at the edge of the page.
-<strong>Gentle Dot is one key away, keeps one continuous conversation with a real memory, and can talk, read your files, and operate your apps.</strong>
-</p>
+<p><strong>ELA es un fork comunitario independiente, desarrollado a partir de <a href="https://github.com/Gentleman-Programming/gentle-dot">Gentle Dot</a>.</strong> Conserva el ejecutable <code>gentle-dot</code> y las rutas de datos compatibles con el proyecto base.</p>
 
 </div>
-
-<br/>
 
 > [!WARNING]
-> **Early preview.** Gentle Dot can see your screen and control your Mac when you allow it, and it runs an AI agent with a shell. Its safety checks are real, but some still live within the agent's reach (see [Security status](#security-status)). Use it on a machine and accounts you are comfortable letting an assistant act on.
+> ELA sigue en desarrollo. Revisa las solicitudes del Agente completo antes de aprobarlas y valida micrófono, salida de audio, permisos y atajos en tu propia sesión gráfica. ELA no es una versión oficial de Gentle Dot.
 
-<br/>
+## Características
 
-<div align="center"><img src="docs/assets/brand/rose.png" width="28" alt="" /></div>
+- **Ollama local y optativo.** Conecta modelos ya instalados mediante la API compatible con OpenAI de Ollama. `qwen2.5:3b` es un modelo de inicio probado para conversación en español; no requiere una API key comercial. ELA no inicia Ollama, descarga modelos ni cambia a un proveedor remoto automáticamente.
+- **Reconocimiento local con Parakeet.** La aplicación de escritorio incluye el modelo NVIDIA Parakeet TDT 0.6B v3 int8 mediante sherpa-onnx. El modelo se descarga desde el panel de voz cuando se solicita; no se incluye en Git.
+- **Síntesis local con Piper.** Configura el binario y un modelo Piper existente. Daniela puede usarse como ejemplo si tienes sus archivos compatibles; las voces no se distribuyen con ELA.
+- **Voice Mode en segundo plano.** Inicia una pregunta por voz sin abrir ni enfocar el panel y escucha la respuesta por PipeWire.
+- **Voz Rápida para Voice Mode.** Usa un prompt compacto, el proveedor/modelo que elegiste y hasta ocho mensajes recientes de texto. No dispone de herramientas de ejecución.
+- **Agente completo para el chat escrito.** Mantiene las herramientas habilitadas según la configuración y conserva sus aprobaciones y controles de seguridad.
+- **Historial persistente.** Las conversaciones se guardan en el almacenamiento de Gentle Dot. La persistencia del historial no significa que el modelo recuerde semánticamente todos sus detalles en cada solicitud.
+- **Tema azul eléctrico.** Interfaz oscura con acento azul, conservando la rosa original de Gentle Dot.
+- **Linux y Hyprland/Wayland.** Incluye configuración de referencia para Omarchy/Hyprland Lua y para `hyprland.conf` clásico.
 
-## Features
+Las funciones nativas de control del escritorio tienen capacidades distintas en Linux y macOS. El control de escritorio de macOS del proyecto base no debe interpretarse como una función equivalente ya validada en todas las distribuciones Linux.
 
----
+## Arquitectura de voz
 
-### Always one key away
-
-A glowing rose sits on your desktop. Click it, press your shortcut (**`⌥ Space`** unless you pick another), or use the menu bar, and the chat opens over whatever you are doing. Hide the rose if you prefer, or open the chat full screen with **`⌘⇧F`**. The same chat runs in the browser, on your machine or on your own server.
-
----
-
-### One conversation, with memory
-
-There is one continuous chat, not a list of threads to manage. When it grows too large, Gentle Dot quietly carries on in a fresh session seeded with a summary, so it stays fast and affordable. It remembers through your global **Engram™** memory: it saves to its own project, `gentle-dot`, and recalls from everything you keep there.
-
----
-
-### Uses your Mac (macOS)
-
-With your permission, Gentle Dot sees the screen and operates your apps: clicks, typing, shortcuts, and opening apps, batched into quick sequences. A pink glow shows where it acts. Every control session needs your approval in a native dialog, risky actions (send, pay, delete, submit) ask first, password managers and System Settings are off limits, and **`⌥⇧Esc`** stops everything instantly. Yolo mode skips the per-action questions for up to an hour, and only you can turn it on.
-
----
-
-### Talk to it
-
-Press the mic and speak: the transcript lands in the input for you to review, or goes out as soon as you stop if you prefer. Replies to what you said are read aloud. Speech runs on your Mac by default; download the optional local model (NVIDIA Parakeet, 25 languages including Spanish) to keep your voice fully offline, or connect an OpenAI API key.
-
----
-
-### Your accounts, your models
-
-Sign in with the subscriptions or API keys you already have (OpenAI, NaN, and others), save role profiles, and switch models from a chip above the input without leaving the chat.
-
-On Linux, Gentle Dot can also use a local Ollama server through its OpenAI-compatible API. Set `GENTLE_DOT_OLLAMA_URL=http://127.0.0.1:11434` before starting Gentle Dot. It checks `/api/tags` at startup and adds only installed models to the model picker. The value is opt-in; Gentle Dot does not start Ollama, download models, or fall back to a remote provider. Ollama can be stopped or have no installed models and the other provider settings remain untouched. A placeholder API key is stored only because the OpenAI-compatible client requires one; it is not a commercial credential.
-
-The selected model is saved in Gentle Dot's agent settings. In a real Gentle Dot run, `qwen2.5:3b` answered a Spanish prompt and the conversation survived an agent restart. Its `read` tool behavior was inconsistent: one run produced invalid calls that failed, and another did not emit a tool call during the observation window. Treat this 3B model as suitable for simple chat, not dependable tool use or strict structured output. Tool policies and approval prompts remain enabled; review tool requests as usual. Ollama reported a 32,768-token context window for this installed model, but effective quality can degrade well before that limit.
-
----
-
-### Connectors, with approvals
-
-Notion, Linear, and Atlassian connect through their official servers; Discord, Slack, and Gmail come with a step-by-step guide; your existing MCP servers can be imported from Claude, Cursor, VS Code, and others. Each connector is read only or read and send, and the assistant shows you a preview and asks before every action that sends or changes something.
-
----
-
-### Files in the chat
-
-Attach files with the paperclip, drag and drop, or paste. Images go straight to the model when it can see them; everything else lands in the assistant's workspace for it to read.
-
----
-
-### Also in the box
-
-| Component | What it does |
-| :--- | :--- |
-| **Self-contained installers** | A macOS DMG and Linux `.deb` and Arch packages carry their own Node, engine, and Engram |
-| **Stable signing** | A self-signed identity keeps macOS permissions across updates |
-| **Isolated engine** | The assistant runs its own engine and home folder; it never touches your own agent setup |
-| **Web and server** | The same interface in the browser, and a Docker setup for your own VPS behind HTTPS |
-| **White label** | Built on [Gentle Shell](https://github.com/Gentleman-Programming/gentle-pi), presented as Gentle Dot |
-
-<div align="right"><a href="#top">Back to top</a></div>
-
-<div align="center"><img src="docs/assets/brand/rose.png" width="28" alt="" /></div>
-
-## Get started
-
-There are no published releases yet: build the installer for your system. You need Node.js 24 and pnpm; the macOS app also needs Rust and the Xcode command line tools, and the Linux packages need Docker.
-
-```sh
-pnpm install
-
-# macOS (Apple Silicon): writes a DMG
-pnpm package:mac
-
-# Linux: a .deb (amd64 also builds the Arch package)
-pnpm package:linux --arch arm64
-pnpm package:linux --arch amd64
+```mermaid
+flowchart LR
+    Mic[Micrófono] --> STT[Parakeet local]
+    STT --> ELA[ELA / agente Gentle Dot]
+    ELA --> Ollama[Ollama local]
+    Ollama --> ELA
+    ELA --> Piper[Piper local]
+    Piper --> PW[PipeWire]
+    PW --> Speakers[Altavoces]
 ```
 
-Then follow **[docs/install.md](docs/install.md)**: opening an unsigned app on macOS 15 and later goes through **System Settings → Privacy & Security → Open Anyway**, and the guide covers permissions, where your data lives, and uninstalling.
+Voice Mode utiliza la ruta rápida sin herramientas de ejecución. El chat escrito puede continuar usando el Agente completo, con herramientas y aprobaciones existentes.
 
-Prefer to run it from the source?
+## Instalación desde código en Arch Linux
 
-```sh
-pnpm dev   # builds the UI and starts the daemon on http://127.0.0.1:4317
-PATH=/opt/homebrew/opt/rustup/bin:$PATH pnpm --filter @gentle-dot/desktop dev   # the macOS app
-```
+### Requisitos
 
-On a terminal, the daemon prints a URL that already carries its access key. Linux users can also build from source with `scripts/linux/setup-debian.sh` or `scripts/linux/setup-arch.sh`.
+El instalador de Arch del repositorio comprueba e instala, con confirmación, las dependencias de sistema para Tauri y WebKitGTK. También prepara Node.js 24 y Rust estable 1.90 o posterior cuando hacen falta. `pnpm` se obtiene usando la versión fijada por `package.json` (11.5.0 en esta rama).
 
-<div align="right"><a href="#top">Back to top</a></div>
+Ollama, Piper y sus modelos son componentes opcionales que se instalan por separado. Para la ruta de voz local también necesitas FFmpeg y PipeWire con `pw-play`. Para compilar y ejecutar desde código fuente necesitas conexión a Internet para clonar el repositorio y descargar dependencias. El reconocimiento/síntesis y la inferencia pueden ejecutarse localmente una vez que sus modelos estén instalados.
 
-<div align="center"><img src="docs/assets/brand/rose.png" width="28" alt="" /></div>
-
-## How it works
-
-A small Node daemon starts the agent engine (Gentle Shell, `gentle-shell --mode rpc`) as a child process, gives it the Gentle Dot identity, restarts it if it crashes, and translates its events into a WebSocket protocol for the desktop app and the browser. The desktop app is Tauri 2: it draws the rose and the panel, owns the global shortcuts, and hosts a native helper for computer control and speech, so the session grant, the panic stop, the blocklist, and the risky-action dialogs live outside the agent.
-
-- **Your data:** `~/.gentle-dot` (mode 0700): sessions, settings, the access key (`token`), and the engine's own home and workspace. Point the assistant at a folder of yours with `GENTLE_DOT_WORKSPACE` or `"workspace"` in `~/.gentle-dot/config.json`.
-- **Memory:** your global Engram (`~/.engram`, port 7437), project `gentle-dot`; `GENTLE_DOT_ENGRAM=private` gives the assistant a memory of its own.
-- **Connectors:** the daemon alone writes `~/.gentle-dot/connectors.json` and the engine's `mcp.json`, and puts them back if anything else changes them.
-- **Screenshots:** each model call carries only the latest one; earlier ones become one-line log entries, which keeps long control sessions fast.
-
-<div align="right"><a href="#top">Back to top</a></div>
-
-<div align="center"><img src="docs/assets/brand/rose.png" width="28" alt="" /></div>
-
-## Security status
-
-What already holds: computer control's grant, panic stop, blocklist, rate limit, and risky-action confirmations are enforced by the desktop app, not the agent, and the agent's processes do not inherit the app's macOS permissions. Connectors are reached only through the assistant's own proxy, which hides what their mode does not allow. Approving a connector's action and changing a connector (its mode, connecting, removing, importing) happen only in the desktop app that started the assistant, in native dialogs, over a private channel the agent cannot open; in the browser those controls are read-only. Credentials are typed in the app, never in the chat. On macOS, connector tokens, client secrets, and sign-ins live in the Keychain, in items the signed app creates, and reach the assistant only in memory over that private channel; they are never written to a file, and tokens from older versions move there once. Without the app, connectors that need a token stop working instead of falling back to a file.
-
-What does not yet: the agent has a shell, and its shell commands are checked on a best-effort basis only. The connector settings file is trusted when the assistant starts, and the app cannot yet tell its own Keychain items from ones another program of yours planted. Protecting the connector settings file is the next step before a stable release. On Linux, tokens go to the system keyring, which any program of yours can read while it is unlocked, and that path is not yet verified on a Linux desktop.
-
-<div align="right"><a href="#top">Back to top</a></div>
-
-<div align="center"><img src="docs/assets/brand/rose.png" width="28" alt="" /></div>
-
-## Documentation
-
-| Where to go | What you'll find |
-| :--- | :--- |
-| **[Install](docs/install.md)** | Installers, first open, permissions, data, uninstall |
-| **[Design](docs/design.md)** | Architecture, protocol, desktop shell, computer control, voice, attachments |
-| **[Linux testing](docs/linux-testing.md)** | GNOME and Hyprland setup and the tester checklist |
-| **[Deploy to a VPS](docs/deploy-vps.md)** | Docker and HTTPS on your own server |
-| **[Desktop app](apps/desktop/README.md)** | The Tauri shell and platform notes |
-
-### Checks
+### Instalar la aplicación de escritorio
 
 ```sh
-pnpm typecheck && pnpm lint && pnpm test   # unit and integration tests, with a fake agent
-pnpm e2e                                   # Playwright against the daemon
+git clone --branch ela https://github.com/4k4m1m3-org/gentle-dot.git
+cd gentle-dot
+scripts/linux/setup-arch.sh
 ```
 
-<div align="right"><a href="#top">Back to top</a></div>
+El script puede pedir `sudo` para los paquetes del sistema, instala las dependencias JavaScript, compila la interfaz y el daemon, compila Tauri sin bundle e instala un lanzador en `$HOME/.local/bin/gentle-dot`. Con `--no-launch` termina sin ofrecer iniciar la aplicación:
 
-<div align="center"><img src="docs/assets/brand/rose.png" width="28" alt="" /></div>
+```sh
+scripts/linux/setup-arch.sh --no-launch
+```
 
-## About the author
+Para trabajar en modo desarrollo web/daemon, en lugar de compilar el ejecutable de escritorio:
 
-Built by [Alan Buscaglia](https://github.com/Gentleman-Programming) (Gentleman Programming), on top of [Gentle-AI](https://github.com/Gentleman-Programming/gentle-ai) and its own workflow.
+```sh
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm build
+pnpm dev
+```
 
-<div align="center">
+`pnpm dev` inicia el daemon local y la interfaz de desarrollo. Mantén privada la URL de acceso que pueda imprimir el daemon; no la publiques junto con registros o capturas.
 
-<a href="https://gentlemanprogramming.com/"><img src="https://img.shields.io/badge/Website-F095C8?style=for-the-badge&labelColor=1A1218&logo=googlechrome&logoColor=F095C8" alt="Website"></a>
-<a href="https://www.youtube.com/@GentlemanProgramming"><img src="https://img.shields.io/badge/YouTube-F095C8?style=for-the-badge&labelColor=1A1218&logo=youtube&logoColor=F095C8" alt="YouTube"></a>
-<a href="https://github.com/Gentleman-Programming"><img src="https://img.shields.io/badge/GitHub-D7A0B8?style=for-the-badge&labelColor=1A1218&logo=github&logoColor=D7A0B8" alt="GitHub"></a>
+Para ejecutar también el shell de escritorio durante el desarrollo, usa `pnpm --filter @gentle-dot/desktop dev` en vez de `pnpm dev`.
 
-</div>
+## Configurar Ollama
 
----
+Instala Ollama con las instrucciones de su [proyecto oficial](https://ollama.com/download), inicia el servidor local si aún no está activo y descarga un modelo. Por ejemplo:
 
-<div align="center">
+```sh
+ollama serve
+```
 
-<img src="docs/assets/brand/rose.png" width="56" alt="" />
+En otra terminal:
 
-<br/>
+```sh
+ollama pull qwen2.5:3b
+ollama list
+```
 
-<h3>Gentle Dot is crafted with Gentle-AI</h3>
+La variable `GENTLE_DOT_OLLAMA_URL` acepta la dirección base local, sin `/v1`:
 
-<br/><br/>
+```sh
+GENTLE_DOT_OLLAMA_URL=http://127.0.0.1:11434 "$HOME/.local/bin/gentle-dot"
+```
 
-<a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-F095C8?style=for-the-badge&labelColor=1A1218" alt="License: MIT"></a>
+La integración consulta la lista instalada de Ollama al iniciar el daemon y añade esos modelos al selector. Abre el selector del chat y elige el proveedor local y `qwen2.5:3b`. La elección del modelo se conserva en la configuración del agente. La clave de compatibilidad OpenAI utilizada para este proveedor local no es una credencial comercial.
 
-</div>
+Para iniciar desde el menú o un atajo de Hyprland, configura la variable en la sesión gráfica para que la hereden el ejecutable y el daemon. En `hyprland.conf`, añade:
 
-> **Trademark notice:** Gentle AI™ and Engram™ are trademarks of Alan Buscaglia. The MIT License applies to the code; it does not permit implying endorsement or official affiliation. See [Gentle-AI's TRADEMARKS.md](https://github.com/Gentleman-Programming/gentle-ai/blob/main/TRADEMARKS.md).
+```ini
+env = GENTLE_DOT_OLLAMA_URL,http://127.0.0.1:11434
+```
+
+Después recarga Hyprland (`hyprctl reload`) y vuelve a abrir Gentle Dot. Si el proceso ya estaba iniciado, ciérralo normalmente antes de probar de nuevo. En Hyprland Lua/Omarchy, conserva la configuración existente y establece la variable en el entorno de la sesión antes de lanzar la aplicación.
+
+La dirección de ejemplo usa exclusivamente loopback. No configures Ollama para escuchar en `0.0.0.0`.
+
+## Configurar Parakeet, Piper y Voice Mode
+
+### Reconocimiento con Parakeet
+
+En el panel de escritorio, abre **Conectores / voz** y solicita la descarga del modelo de voz local. El modelo Parakeet TDT 0.6B v3 int8 ocupa aproximadamente 487 MB. La aplicación verifica los archivos antes de utilizarlos. En Linux el reconocimiento se procesa localmente mediante CPU; la prueba real de micrófono depende del dispositivo, permisos y sesión de audio del sistema.
+
+### Síntesis con Piper
+
+Instala [Piper](https://github.com/OHF-Voice/piper1-gpl) y una voz compatible por separado. Piper debe poder ejecutarse como CLI; ELA también utiliza FFmpeg para preparar audio comprimido y PipeWire (`pw-play`) para la reproducción del Voice Mode. Configura `~/.gentle-dot/piper.json` con rutas absolutas a tu binario y al archivo `.onnx`; Piper necesita además el archivo lateral `.onnx.json`:
+
+```json
+{
+  "bin": "/ruta/absoluta/al/binario/piper",
+  "model": "/ruta/absoluta/a/es_ES-daniela-medium.onnx"
+}
+```
+
+El nombre Daniela es solo un ejemplo de voz: ELA no descarga ni incluye ese modelo. Sustituye ambas rutas por las ubicaciones de tu sistema.
+
+Voice Mode tiene configuración opcional en `~/.gentle-dot/voice-mode.json`. Por ejemplo, para pedir respuestas habladas con Piper:
+
+```json
+{
+  "enabled": true,
+  "spokenReplies": true,
+  "engine": "piper"
+}
+```
+
+Los demás parámetros de captura tienen valores predeterminados documentados en [docs/voice-mode.md](docs/voice-mode.md). El micrófono usa Parakeet local; Piper sintetiza la respuesta y la reproducción pasa por la salida predeterminada de PipeWire.
+
+### Atajos en Hyprland
+
+El código fuente conserva el nombre técnico `gentle-dot`. La configuración de referencia está en [scripts/linux/hyprland/gentle-dot.lua](scripts/linux/hyprland/gentle-dot.lua) (Omarchy/Hyprland Lua) y [scripts/linux/hyprland/gentle-dot.conf](scripts/linux/hyprland/gentle-dot.conf) (configuración clásica). Integra los bloques correspondientes en tu configuración actual, adapta el ejecutable si lo instalaste en otra ruta y recarga Hyprland:
+
+- **`SUPER + ALT + I`** activa Voice Mode sin abrir el panel. Repetir el atajo termina la captura o cancela la operación/reproducción activa.
+- **`SUPER + ALT + D`** abre o cierra el panel según las reglas y el atajo instalados.
+- `gentle-dot --voice-cancel` cancela explícitamente sin enviar una captura pendiente. Una pregunta ya enviada permanece en el historial; esta cancelación no aborta una herramienta o aprobación del Agente completo.
+
+Voice Mode no escucha continuamente ni tiene palabra de activación. Las aprobaciones siguen su flujo habitual y pueden requerir abrir el panel.
+
+## Rendimiento observado
+
+En una comparación concreta con `qwen2.5:3b` ejecutándose en CPU, para solicitudes equivalentes:
+
+| Ruta | Tokens de entrada | Tiempo observado |
+| --- | ---: | ---: |
+| Contexto original del agente | 2.046 | 43,8 s |
+| Voz Rápida | 157 | 3,06 s |
+
+En esa comparación, la respuesta por Voz Rápida fue aproximadamente **14,3× más rápida**. Es una medición puntual, no una garantía: los resultados dependen del hardware, el modelo, la solicitud, la generación y el estado de la caché.
+
+En el equipo de referencia, la Quadro P620 no fue utilizada por la compilación CUDA de Ollama instalada; la inferencia observada usó CPU. Esto no implica que todas las instalaciones o tarjetas tengan el mismo comportamiento.
+
+## Estado y limitaciones
+
+- ELA es un proyecto comunitario en desarrollo; no hay garantía de compatibilidad con todas las distribuciones, escritorios, dispositivos de audio o controladores Linux.
+- Los modelos pequeños, incluido Qwen 2.5 3B, pueden responder bien en conversación breve y aun así producir llamadas de herramientas inválidas, omitirlas o fallar con salidas estructuradas. Usa el Agente completo con supervisión; no se desactivan las políticas de herramientas ni las aprobaciones.
+- Voz Rápida no puede ejecutar acciones ni inspeccionar archivos: si la solicitud necesita herramientas, utiliza el chat escrito en modo Agente completo.
+- La captura real de micrófono y la reproducción audible por Piper deben comprobarse en cada entorno. Las pruebas automatizadas no demuestran por sí solas que el usuario oyó una respuesta.
+- En la validación de esta actualización, `pnpm test` pasó con **694 aprobadas y 6 omitidas**. `pnpm lint` sigue fallando globalmente: encontró 9 errores y 4 advertencias en código fuente/pruebas, pendientes de corregir y no causados por este cambio de documentación.
+- El comportamiento de control nativo de escritorio difiere entre Linux y macOS; no todas las acciones disponibles en una plataforma están disponibles en la otra.
+
+## Desarrollo y contribuciones
+
+Usa la rama `ela` para el fork personalizado. Para una función aislada, Git Worktree permite trabajar en otra rama sin alternar el checkout actual:
+
+```sh
+git worktree add ../gentle-dot-feature -b feature/nombre ela
+cd ../gentle-dot-feature
+```
+
+Al terminar, revisa los cambios y ejecuta las comprobaciones pertinentes antes de integrarlos. Para una contribución genérica al proyecto original, parte de `main` y separa branding, Piper y personalizaciones de ELA del cambio propuesto. No publiques claves, tokens, archivos `.env`, conversaciones, modelos descargados ni configuraciones privadas.
+
+Comprobaciones del repositorio:
+
+```sh
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm e2e
+```
+
+Consulta [docs/linux-testing.md](docs/linux-testing.md) para la lista de validación Linux. El resto del flujo de ramas se resume arriba.
+
+## Créditos y licencia
+
+ELA es un fork comunitario independiente de [Gentle Dot](https://github.com/Gentleman-Programming/gentle-dot), creado originalmente por [Alan Buscaglia / Gentleman Programming](https://github.com/Gentleman-Programming). ELA no está afiliado, respaldado ni publicado oficialmente por Gentleman Programming.
+
+El proyecto conserva la licencia [MIT](LICENSE) y los avisos de copyright aplicables. Gentle Dot utiliza [Gentle-AI](https://github.com/Gentleman-Programming/gentle-ai) y el componente/proyecto [Engram](https://github.com/Gentleman-Programming/engram); sus autores, marcas y avisos respectivos continúan perteneciendo a sus titulares. **Gentle AI™ y Engram™ son marcas de Alan Buscaglia.** La licencia MIT del código no implica afiliación ni autorización para sugerir respaldo oficial. Consulta también el [aviso de marcas de Gentle-AI](https://github.com/Gentleman-Programming/gentle-ai/blob/main/TRADEMARKS.md).
+
+<div align="right"><a href="#top">Volver arriba</a></div>
