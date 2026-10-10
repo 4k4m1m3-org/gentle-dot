@@ -95,12 +95,20 @@ export class VoiceService {
 		}
 	}
 
-	async speak(text: string, localWav = false, signal?: AbortSignal): Promise<VoiceResult<{ mime: string; data: string }>> {
+	async speak(
+		text: string,
+		localWav = false,
+		signal?: AbortSignal,
+	): Promise<VoiceResult<{ mime: string; data: string }>> {
 		if (text.trim() === "" || text.length > MAX_VOICE_TEXT) return { ok: false, reason: REASONS.noText };
 		if (this.options.piper && (await piperAvailable(this.options.piper))) {
+			const startedAt = Date.now();
 			try {
-				return await piperSpeak(text, this.options.piper, localWav, signal);
+				const result = await piperSpeak(text, this.options.piper, localWav, signal);
+				this.log(`timing stage=piper_synthesis ms=${Date.now() - startedAt}`);
+				return result;
 			} catch {
+				this.log(`timing stage=piper_synthesis ms=${Date.now() - startedAt} failed=true`);
 				this.log("local Piper TTS could not generate audio");
 				return { ok: false, reason: "Piper local no pudo generar audio. Revisa ~/.gentle-dot/daemon.log." };
 			}

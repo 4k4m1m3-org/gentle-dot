@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { inheritedAppSocket } from "./app-channel.ts";
 import { loadConfig } from "./config.ts";
 import { APPROVAL_GUARD, bundledMcpCli } from "./connectors.ts";
-import { startDaemon, startupMessage } from "./daemon.ts";
+import { QUICK_VOICE_EXTENSION, startDaemon, startupMessage } from "./daemon.ts";
 import { resolveEngramBin, runtimeDir } from "./runtime.ts";
 import { IDENTITY_SOURCE } from "./white-label.ts";
 
@@ -23,10 +23,17 @@ function selfCheck(): void {
 		gentleShell: config.agentArgs[0],
 		engineCli: bundledMcpCli().args[0],
 		approvalGuard: APPROVAL_GUARD,
+		quickVoiceExtension: QUICK_VOICE_EXTENSION,
 		identity: fileURLToPath(IDENTITY_SOURCE),
 		engramBin: runtime ? resolveEngramBin(process.env, runtime) : undefined,
 	};
-	const required = [report.gentleShell, report.engineCli, report.approvalGuard, report.identity];
+	const required = [
+		report.gentleShell,
+		report.engineCli,
+		report.approvalGuard,
+		report.quickVoiceExtension,
+		report.identity,
+	];
 	const ok = required.every((path) => path !== undefined && existsSync(path));
 	process.stdout.write(`${JSON.stringify({ ok, ...report }, null, 2)}\n`);
 	process.exit(ok ? 0 : 1);

@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import type { Activity, ConversationSummary, HistoryMessage } from "@gentle-dot/protocol";
+import { stripQuickVoiceMarker } from "./extensions/quick-conversation.ts";
 import { describeTool, textOf } from "./presentation.ts";
 import { splitAttachments } from "./uploads.ts";
 import { presentText } from "./white-label.ts";
@@ -76,7 +77,7 @@ function titleOf(path: string): string {
 		if (record.type === "session_info") name = typeof record.name === "string" ? record.name : undefined;
 		const message = (record.message ?? record) as { role?: unknown };
 		if (firstUser === undefined && message.role === "user") {
-			const { text, attachments } = splitAttachments(textOf(message));
+			const { text, attachments } = splitAttachments(stripQuickVoiceMarker(textOf(message)));
 			firstUser = text || attachments.map((a) => a.name).join(", ");
 		}
 	}
@@ -177,7 +178,7 @@ export function historyFromMessages(messages: unknown[]): HistoryMessage[] {
 	for (const raw of messages) {
 		const m = raw as AgentMessage;
 		if (m.role === "user") {
-			const { text, attachments } = splitAttachments(textOf(m));
+			const { text, attachments } = splitAttachments(stripQuickVoiceMarker(textOf(m)));
 			history.push({
 				id: `h${++index}`,
 				role: "user",
