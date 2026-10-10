@@ -75,7 +75,11 @@ async function registerEngineProviders(runtime: {
 }
 
 /** Pi's ModelRuntime on the assistant's home: same auth.json format and file locking as Gentle Shell. */
-export async function createModelAuthRuntime(agentHome: string, cwd: string): Promise<AuthRuntime> {
+export async function createModelAuthRuntime(
+	agentHome: string,
+	cwd: string,
+	options: { ollamaConfigured?: boolean; ollamaAvailable?: boolean } = {},
+): Promise<AuthRuntime> {
 	mkdirSync(agentHome, { recursive: true, mode: 0o700 });
 	const { ModelRuntime, SettingsManager } = await import("@earendil-works/pi-coding-agent");
 	const runtime = await ModelRuntime.create({
@@ -88,7 +92,12 @@ export async function createModelAuthRuntime(agentHome: string, cwd: string): Pr
 	const settings = SettingsManager.create(cwd, agentHome);
 	return {
 		getProviders: () => runtime.getProviders() as unknown as ReturnType<AuthRuntime["getProviders"]>,
-		getProviderAuthStatus: (providerId) => runtime.getProviderAuthStatus(providerId),
+		getProviderAuthStatus: (providerId) => {
+			if (providerId === "ollama" && options.ollamaConfigured) {
+				return options.ollamaAvailable ? { configured: true, source: "local" } : { configured: false };
+			}
+			return runtime.getProviderAuthStatus(providerId);
+		},
 		login: (providerId, type, interaction) =>
 			runtime.login(providerId, type, interaction as never, {
 				getDeviceId: () => settings.getOrCreateDeviceId(),

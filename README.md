@@ -76,6 +76,10 @@ Press the mic and speak: the transcript lands in the input for you to review, or
 
 Sign in with the subscriptions or API keys you already have (OpenAI, NaN, and others), save role profiles, and switch models from a chip above the input without leaving the chat.
 
+On Linux, Gentle Dot can also use a local Ollama server through its OpenAI-compatible API. Set `GENTLE_DOT_OLLAMA_URL=http://127.0.0.1:11434` before starting Gentle Dot. It checks `/api/tags` at startup and adds only installed models to the model picker. The value is opt-in; Gentle Dot does not start Ollama, download models, or fall back to a remote provider. Ollama can be stopped or have no installed models and the other provider settings remain untouched. A placeholder API key is stored only because the OpenAI-compatible client requires one; it is not a commercial credential.
+
+The selected model is saved in Gentle Dot's agent settings. In a real Gentle Dot run, `qwen2.5:3b` answered a Spanish prompt and the conversation survived an agent restart. Its `read` tool behavior was inconsistent: one run produced invalid calls that failed, and another did not emit a tool call during the observation window. Treat this 3B model as suitable for simple chat, not dependable tool use or strict structured output. Tool policies and approval prompts remain enabled; review tool requests as usual. Ollama reported a 32,768-token context window for this installed model, but effective quality can degrade well before that limit.
+
 ---
 
 ### Connectors, with approvals

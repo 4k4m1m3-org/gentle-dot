@@ -1,9 +1,9 @@
-import { statSync } from "node:fs";
+import { statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ServerMessage } from "@gentle-dot/protocol";
 import { afterEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
-import { createModelAuthRuntime, resolveAgentHome } from "../src/auth.ts";
+import { AuthManager, type AuthRuntime, createModelAuthRuntime, resolveAgentHome } from "../src/auth.ts";
 import { type DotDaemon, startDaemon } from "../src/daemon.ts";
 import { fakeAuthRuntime } from "./fake-auth-runtime.ts";
 import { FAKE_AGENT, tempDir, waitFor } from "./helpers.ts";
@@ -13,7 +13,7 @@ afterEach(async () => {
 	await Promise.all(daemons.splice(0).map((d) => d.close()));
 });
 
-async function setup(env: NodeJS.ProcessEnv = process.env) {
+async function setup(env: NodeJS.ProcessEnv = process.env, authRuntime?: () => Promise<AuthRuntime>) {
 	const fake = fakeAuthRuntime();
 	const logs: string[] = [];
 	const dataDir = tempDir();
@@ -27,7 +27,7 @@ async function setup(env: NodeJS.ProcessEnv = process.env) {
 		agentArgs: [FAKE_AGENT],
 		backoffMs: [50],
 		agentEnv: env,
-		authRuntime: async () => fake.runtime,
+		authRuntime: authRuntime ?? (async () => fake.runtime),
 		log: (line) => logs.push(line),
 	});
 	daemons.push(d);
@@ -57,6 +57,32 @@ async function connect(d: DotDaemon) {
 }
 
 describe("sign-in", () => {
+	it("treats a configured local provider as usable without a commercial account", async () => {
+		const runtime: AuthRuntime = {
+			getProviders: () => [{ id: "ollama", name: "Ollama", auth: { apiKey: { name: "API key" } } }],
+			getProviderAuthStatus: () => ({ configured: true, source: "local" }),
+			login: async () => {},
+			logout: async () => {},
+		};
+		const auth = new AuthManager({ runtime: async () => runtime });
+		expect(await auth.hasAccount()).toBe(true);
+		expect(await auth.providers()).toEqual([
+			{ id: "ollama", name: "Ollama", methods: ["api_key"], configured: true, source: "local" },
+		]);
+	});
+
+	it("does not translate a local inference failure into a missing commercial account", async () => {
+		const runtime: AuthRuntime = {
+			getProviders: () => [{ id: "ollama", name: "Ollama (local)", auth: { apiKey: { name: "API key" } } }],
+			getProviderAuthStatus: () => ({ configured: true, source: "local" }),
+			login: async () => {},
+			logout: async () => {},
+		};
+		const { send, find } = await setup({ ...process.env, FAKE_AGENT_NO_MODEL: "1" }, async () => runtime);
+		send({ type: "send", text: "hello" });
+		expect(await find("error")).toMatchObject({ code: "command_failed" });
+	});
+
 	it("lists the providers that support sign-in with their status", async () => {
 		const { send, find } = await setup();
 		send({ type: "auth_list" });
@@ -268,6 +294,37 @@ describe("createModelAuthRuntime (Pi's runtime, offline)", () => {
 		const nan = runtime.getProviders().find((provider) => provider.name === "NaN");
 		expect(nan?.auth.apiKey?.name).toBe("NaN API key");
 		expect(runtime.getProviderAuthStatus(nan?.id ?? "").configured).toBe(false);
+	});
+
+	it("marks only a discovered local provider usable without altering commercial account status", async () => {
+		const home = tempDir();
+		writeFileSync(
+			join(home, "models.json"),
+			JSON.stringify({
+				providers: {
+					ollama: {
+						name: "Ollama (local)",
+						baseUrl: "http://127.0.0.1:11434/v1",
+						api: "openai-completions",
+						apiKey: "ollama-local",
+						models: [{ id: "qwen2.5:3b" }],
+					},
+				},
+			}),
+		);
+		const runtime = await createModelAuthRuntime(home, home, {
+			ollamaConfigured: true,
+			ollamaAvailable: true,
+		});
+		const auth = new AuthManager({ runtime: async () => runtime });
+		expect(await auth.hasAccount()).toBe(true);
+		expect(runtime.getProviderAuthStatus("ollama")).toEqual({ configured: true, source: "local" });
+		expect(runtime.getProviderAuthStatus("openai").configured).toBe(false);
+		const offline = await createModelAuthRuntime(home, home, {
+			ollamaConfigured: true,
+			ollamaAvailable: false,
+		});
+		expect(offline.getProviderAuthStatus("ollama")).toEqual({ configured: false });
 	});
 });
 
