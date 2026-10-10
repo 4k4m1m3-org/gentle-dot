@@ -330,7 +330,13 @@ export function parseProfileRoles(value: unknown): ProfileRoles | undefined {
 export type ClientMessage =
 	| { type: "hello"; token: string; protocol: number }
 	/** `text` may be empty when files are attached. */
-	| { type: "send"; text: string; requestId?: string; attachments?: AttachmentRef[] }
+	| {
+			type: "send";
+			text: string;
+			requestId?: string;
+			attachments?: AttachmentRef[];
+			voiceConversation?: string;
+	  }
 	| { type: "steer"; text: string }
 	| { type: "abort" }
 	| { type: "ui_response"; requestId: string; value?: string; confirmed?: boolean; cancelled?: boolean }
@@ -375,7 +381,8 @@ export type ClientMessage =
 	| { type: "computer_unregister" }
 	/** A recording to turn into text: its audio type and the bytes in base64. */
 	| { type: "voice_transcribe"; requestId: string; mime: string; data: string }
-	| { type: "voice_speak"; requestId: string; text: string };
+	| { type: "voice_speech_cancel"; requestId: string }
+	| { type: "voice_speak"; requestId: string; text: string; localWav?: boolean };
 
 export type ServerPayload =
 	| {
@@ -562,6 +569,10 @@ export function parseClientMessage(raw: string): ClientMessage | undefined {
 			const send: Extract<ClientMessage, { type: "send" }> = { type: "send", text: m.text };
 			if (m.requestId !== undefined) send.requestId = m.requestId as string;
 			if (attachments) send.attachments = attachments;
+			if (m.voiceConversation !== undefined) {
+				if (!isShortString(m.voiceConversation)) return undefined;
+				send.voiceConversation = m.voiceConversation;
+			}
 			return send;
 		}
 		case "steer":
@@ -652,12 +663,19 @@ export function parseClientMessage(raw: string): ClientMessage | undefined {
 			return isShortString(m.requestId) && isString(m.mime) && VOICE_MIME.test(m.mime) && isAudio(m.data)
 				? { type: "voice_transcribe", requestId: m.requestId, mime: m.mime, data: m.data }
 				: undefined;
+		case "voice_speech_cancel":
+			return isShortString(m.requestId) ? { type: "voice_speech_cancel", requestId: m.requestId } : undefined;
 		case "voice_speak":
 			return isShortString(m.requestId) &&
 				isString(m.text) &&
 				m.text.trim() !== "" &&
 				m.text.length <= MAX_VOICE_TEXT
-				? { type: "voice_speak", requestId: m.requestId, text: m.text }
+				? {
+						type: "voice_speak",
+						requestId: m.requestId,
+						text: m.text,
+						...(m.localWav === true ? { localWav: true } : {}),
+					}
 				: undefined;
 		case "computer_unregister":
 		case "connectors_list":

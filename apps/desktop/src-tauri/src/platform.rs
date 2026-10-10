@@ -73,12 +73,18 @@ pub fn compositor_places_windows(env: impl Fn(&str) -> Option<String>) -> bool {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LaunchRequest {
     Toggle,
+    VoiceToggle,
+    VoiceCancel,
     Show,
 }
 
 /// Reads the arguments of a launch, `args[0]` being the program.
 pub fn launch_request(args: &[String]) -> LaunchRequest {
-    if args.iter().skip(1).any(|arg| arg == "--toggle") {
+    if args.iter().skip(1).any(|arg| arg == "--voice-cancel") {
+        LaunchRequest::VoiceCancel
+    } else if args.iter().skip(1).any(|arg| arg == "--voice-toggle") {
+        LaunchRequest::VoiceToggle
+    } else if args.iter().skip(1).any(|arg| arg == "--toggle") {
         LaunchRequest::Toggle
     } else {
         LaunchRequest::Show
@@ -161,6 +167,14 @@ mod tests {
         assert!(!compositor_places_windows(env_of(x11)));
         assert_eq!(forced_gdk_backend(env_of(&[])), None);
         assert!(!compositor_places_windows(env_of(&[])));
+    }
+
+    #[test]
+    fn voice_launch_never_requests_a_panel() {
+        let args = |list: &[&str]| list.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        assert_eq!(launch_request(&args(&["gentle-dot", "--voice-toggle"])), LaunchRequest::VoiceToggle);
+        assert_eq!(launch_request(&args(&["gentle-dot", "--voice-cancel", "--toggle"])), LaunchRequest::VoiceCancel);
+        assert_eq!(launch_request(&args(&["--voice-toggle"])), LaunchRequest::Show);
     }
 
     #[test]

@@ -32,6 +32,7 @@ import { AppSecretSource } from "./secret-source.ts";
 import { AgentSupervisor } from "./supervisor.ts";
 import { UploadStore } from "./uploads.ts";
 import { VoiceService } from "./voice.ts";
+import { loadPiperConfig } from "./piper-local.ts";
 import { identityArgs } from "./white-label.ts";
 
 export interface DaemonOptions {
@@ -230,11 +231,14 @@ export async function startDaemon(options: DaemonOptions): Promise<DotDaemon> {
 			: {}),
 		log,
 	});
+	const piperConfig = loadPiperConfig(options.dataDir);
 	const voice = new VoiceService({
 		apiKey: () => auth.openAIApiKey(),
+		...(piperConfig ? { piper: piperConfig } : {}),
 		...(options.voiceFetch ? { fetch: options.voiceFetch } : {}),
 		log,
 	});
+	await voice.refresh();
 	const uploads = new UploadStore({
 		workspace: options.workspace,
 		...(options.uploadLimits ? { limits: options.uploadLimits } : {}),

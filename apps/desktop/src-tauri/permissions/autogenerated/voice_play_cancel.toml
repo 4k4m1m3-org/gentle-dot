@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-voice-play-cancel"
+description = "Enables the voice_play_cancel command without any pre-configured scope."
+commands.allow = ["voice_play_cancel"]
+
+[[permission]]
+identifier = "deny-voice-play-cancel"
+description = "Denies the voice_play_cancel command without any pre-configured scope."
+commands.deny = ["voice_play_cancel"]

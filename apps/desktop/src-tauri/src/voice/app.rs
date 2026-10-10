@@ -6,13 +6,15 @@
 //! runs on a blocking thread: starting may wait on a permission prompt, stopping waits for the
 //! final transcript, and removing the model deletes files.
 
+pub use super::playback;
+
 use super::engine::{fallback_engine, Preferred};
 use super::model::{HttpFetcher, ModelError, ModelEvent, ModelEvents, ModelManager, ModelSpec, ModelStatus, MODEL_EVENT};
 use super::parakeet::{self, Loader, Locate, Parakeet};
 use super::{Events, Transcript, Voice, VoiceError, VoiceEvent, VoiceStatus, UNSUPPORTED};
 use crate::computer::SystemClock;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, EventTarget, Manager};
 
 /// The commands, as registered in `build.rs` and granted to the panel.
@@ -30,15 +32,18 @@ pub const COMMANDS: [&str; 8] = [
 /// Voice input, when this platform has a backend.
 pub struct VoiceInput {
     voice: Option<Voice>,
+    owner: Mutex<Option<CaptureOwner>>,
 }
+
+struct CaptureOwner { label: String, in_flight: bool, cancelled: bool }
 
 impl VoiceInput {
     pub fn new(voice: Voice) -> Self {
-        VoiceInput { voice: Some(voice) }
+        VoiceInput { voice: Some(voice), owner: Mutex::new(None) }
     }
 
     pub fn unsupported() -> Self {
-        VoiceInput { voice: None }
+        VoiceInput { voice: None, owner: Mutex::new(None) }
     }
 
     fn voice(&self) -> Result<&Voice, VoiceError> {
@@ -156,6 +161,13 @@ pub async fn voice_status(app: AppHandle) -> Result<VoiceStatus, String> {
 
 #[tauri::command]
 pub async fn voice_start(app: AppHandle, webview: tauri::WebviewWindow, locale: Option<String>) -> Result<(), String> {
+    let owner = webview.label().to_string();
+    {
+        let input = app.state::<VoiceInput>();
+        let mut current = input.owner.lock().unwrap();
+        if current.is_some() { return Err("Another window is using the microphone".into()); }
+        *current = Some(CaptureOwner { label: owner.clone(), in_flight: true, cancelled: false });
+    }
     let target = EventTarget::webview_window(webview.label());
     let emitter = app.clone();
     let events: Events = Arc::new(move |event: VoiceEvent| {
@@ -163,17 +175,49 @@ pub async fn voice_start(app: AppHandle, webview: tauri::WebviewWindow, locale: 
             eprintln!("gentle-dot: cannot send a voice event: {error}");
         }
     });
-    blocking(app, move |input| input.start(locale.as_deref(), events)).await
+    blocking(app, move |input| {
+        if input.owner.lock().unwrap().as_ref().is_some_and(|o| o.cancelled) {
+            input.owner.lock().unwrap().take();
+            return Err(VoiceError::Cancelled);
+        }
+        let result = input.start(locale.as_deref(), events);
+        let mut owner = input.owner.lock().unwrap();
+        if owner.as_ref().is_some_and(|o| o.cancelled) {
+            let _ = input.cancel();
+            owner.take();
+            return Err(VoiceError::Cancelled);
+        }
+        if result.is_err() { owner.take(); } else if let Some(owner) = owner.as_mut() { owner.in_flight = false; }
+        result
+    }).await
 }
 
 #[tauri::command]
-pub async fn voice_stop(app: AppHandle) -> Result<Transcript, String> {
-    blocking(app, VoiceInput::stop).await
+pub async fn voice_stop(app: AppHandle, webview: tauri::WebviewWindow) -> Result<Transcript, String> {
+    let owner = webview.label().to_string();
+    blocking(app, move |input| {
+        {
+            let mut current = input.owner.lock().unwrap();
+            let Some(capture) = current.as_mut().filter(|o| o.label == owner && !o.in_flight) else { return Err(VoiceError::Busy); };
+            capture.in_flight = true;
+        }
+        let result = input.stop();
+        input.owner.lock().unwrap().take();
+        result
+    }).await
 }
 
 #[tauri::command]
-pub async fn voice_cancel(app: AppHandle) -> Result<(), String> {
-    blocking(app, VoiceInput::cancel).await
+pub async fn voice_cancel(app: AppHandle, webview: tauri::WebviewWindow) -> Result<(), String> {
+    let owner = webview.label().to_string();
+    blocking(app, move |input| {
+        let mut current = input.owner.lock().unwrap();
+        let Some(capture) = current.as_mut().filter(|o| o.label == owner) else { return Ok(()); };
+        capture.cancelled = true;
+        let result = input.cancel();
+        if !capture.in_flight { current.take(); }
+        result
+    }).await
 }
 
 async fn model<T: Send + 'static>(
@@ -271,7 +315,7 @@ mod tests {
         for command in COMMANDS {
             assert!(build.contains(&format!("\"{command}\",")), "{command} is missing from build.rs");
             let permission = format!("allow-{}", command.replace('_', "-"));
-            assert_eq!(granted_to(&permission), vec!["panel"], "{permission}");
+            assert_eq!(granted_to(&permission), if command.starts_with("voice_model_") { vec!["panel"] } else { vec!["dot", "panel"] }, "{permission}");
         }
     }
 }

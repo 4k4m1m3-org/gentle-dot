@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-voice-mode-poll"
+description = "Enables the voice_mode_poll command without any pre-configured scope."
+commands.allow = ["voice_mode_poll"]
+
+[[permission]]
+identifier = "deny-voice-mode-poll"
+description = "Denies the voice_mode_poll command without any pre-configured scope."
+commands.deny = ["voice_mode_poll"]

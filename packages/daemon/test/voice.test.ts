@@ -225,6 +225,41 @@ async function startWith(apiKey: string | undefined, reply: (call: Call) => Resp
 }
 
 describe("voice through the daemon", () => {
+	it("sends voice once into normal history and rejects stale conversations", async () => {
+		const { send, find, messages } = await startWith(undefined, () => new Response());
+		await find("ready");
+		send({ type: "get_history" });
+		const ready = await find("history");
+		const turn = {
+			type: "send",
+			text: "Hola por voz",
+			requestId: "voice-turn-1",
+			voiceConversation: ready.conversationId,
+		};
+		expect(ready.conversationId).toBeTruthy();
+		send(turn);
+		send(turn);
+		await find("message_done");
+		expect(messages.filter((m) => m.type === "user_message")).toHaveLength(1);
+		send({ ...turn, requestId: "voice-turn-2", voiceConversation: "stale-session" });
+		expect(await find("voice_unavailable")).toMatchObject({ requestId: "voice-turn-2" });
+		expect(messages.filter((m) => m.type === "user_message")).toHaveLength(1);
+	});
+	it("refuses voice while another prompt is running instead of steering it", async () => {
+		const { send, find } = await startWith(undefined, () => new Response());
+		await find("ready");
+		send({ type: "get_history" });
+		const ready = await find("history");
+		send({ type: "send", text: "hang" });
+		await find("user_message");
+		send({
+			type: "send",
+			text: "do not interrupt",
+			requestId: "busy-voice",
+			voiceConversation: ready.conversationId,
+		});
+		expect(await find("voice_unavailable")).toMatchObject({ requestId: "busy-voice" });
+	});
 	it("reports voice in the accounts list and transcribes a recording with the key kept in the daemon", async () => {
 		const { send, find, messages, logs, calls } = await startWith(KEY, () =>
 			Response.json({ text: "what's on my calendar" }),

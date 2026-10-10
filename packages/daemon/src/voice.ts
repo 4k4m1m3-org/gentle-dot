@@ -1,4 +1,5 @@
 import { MAX_VOICE_AUDIO, MAX_VOICE_TEXT, type VoiceCapability } from "@gentle-dot/protocol";
+import { type PiperConfig, piperAvailable, piperSpeak } from "./piper-local.ts";
 
 export const TRANSCRIBE_URL = "https://api.openai.com/v1/audio/transcriptions";
 export const SPEECH_URL = "https://api.openai.com/v1/audio/speech";
@@ -15,6 +16,8 @@ export interface VoiceServiceOptions {
 	fetch?: typeof fetch;
 	log?: (line: string) => void;
 	timeoutMs?: number;
+	/** Piper TTS local configurado por el usuario. */
+	piper?: PiperConfig;
 }
 
 const REASONS = {
@@ -65,7 +68,8 @@ export class VoiceService {
 	/** Checks whether a key is connected now. */
 	async refresh(): Promise<VoiceCapability> {
 		const on = (await this.key()) !== undefined;
-		this.current = { transcribe: on, speak: on };
+		const localPiper = this.options.piper ? await piperAvailable(this.options.piper) : false;
+		this.current = { transcribe: on, speak: on || localPiper };
 		return this.current;
 	}
 
@@ -91,8 +95,17 @@ export class VoiceService {
 		}
 	}
 
-	async speak(text: string): Promise<VoiceResult<{ mime: string; data: string }>> {
+	async speak(text: string, localWav = false, signal?: AbortSignal): Promise<VoiceResult<{ mime: string; data: string }>> {
 		if (text.trim() === "" || text.length > MAX_VOICE_TEXT) return { ok: false, reason: REASONS.noText };
+		if (this.options.piper && (await piperAvailable(this.options.piper))) {
+			try {
+				return await piperSpeak(text, this.options.piper, localWav, signal);
+			} catch {
+				this.log("local Piper TTS could not generate audio");
+				return { ok: false, reason: "Piper local no pudo generar audio. Revisa ~/.gentle-dot/daemon.log." };
+			}
+		}
+		if (localWav) return { ok: false, reason: "Voice Mode necesita el Piper local configurado." };
 		const body = JSON.stringify({
 			model: SPEECH_MODEL,
 			voice: SPEECH_VOICE,

@@ -1,18 +1,18 @@
 /* Visual tokens measured from gentlemanprogramming.com (S15). Dark only. */
 :root {
-	--bg: #1a1218;
-	--bg-glass: rgba(26, 18, 24, 0.82);
-	--surface: #20161e;
-	--surface-2: #241822;
-	--line: #342230;
-	--text: #f6eff3;
-	--muted: #a78e9b;
-	--accent: #f095c8;
+	--bg: #0b1220;
+	--bg-glass: rgba(11, 18, 32, 0.82);
+	--surface: #111d31;
+	--surface-2: #172741;
+	--line: #294361;
+	--text: #e9f3ff;
+	--muted: #99acc9;
+	--accent: #248bff;
 	/* Text on the pink accent: white is 2.13:1 there, this is 8.60:1 (the site's pills do the same). */
-	--accent-ink: #1a1218;
-	--accent-soft: rgba(240, 149, 200, 0.12);
-	--accent-line: rgba(240, 149, 200, 0.35);
-	--accent-shadow: 0 10px 30px rgba(240, 149, 200, 0.3);
+	--accent-ink: #0b1220;
+	--accent-soft: rgba(36, 139, 255, 0.12);
+	--accent-line: rgba(36, 139, 255, 0.35);
+	--accent-shadow: 0 10px 30px rgba(36, 139, 255, 0.3);
 	--green: #b4e7c7;
 	--red: #ff718f;
 	--yellow: #e0c27a;
@@ -46,7 +46,7 @@ body,
 }
 
 body {
-	background: radial-gradient(900px 480px at 12% -12%, rgba(240, 149, 200, 0.1), transparent 70%), var(--bg);
+	background: radial-gradient(900px 480px at 12% -12%, rgba(36, 139, 255, 0.1), transparent 70%), var(--bg);
 }
 
 html[data-surface="dot"] body,
@@ -94,8 +94,8 @@ button.primary {
 }
 
 button.primary:hover:not(:disabled) {
-	background: #f4aad4;
-	border-color: #f4aad4;
+	background: #57abff;
+	border-color: #57abff;
 }
 
 button.primary:disabled {
@@ -200,9 +200,9 @@ textarea:focus {
 
 /* The window is this square (DOT_SIZE in shell.rs); outside the disc it stays transparent. */
 .dot {
-	--neon: #ff2d7a;
-	--neon-soft: rgba(255, 45, 122, 0.35);
-	--core: #ffd6e8;
+	--neon: #248bff;
+	--neon-soft: rgba(36, 139, 255, 0.35);
+	--core: #eaf5ff;
 	position: relative;
 	display: block;
 	width: 72px;
@@ -227,12 +227,12 @@ textarea:focus {
    The 3 px inset leaves room for its outer shadow inside the window. The rim carries a
    subtle state cue; the glow and the traveling light stay on the rose's strokes. */
 .dot-disc {
-	--rim: rgba(255, 45, 122, 0.22);
-	--rim-glow: rgba(255, 45, 122, 0);
+	--rim: rgba(36, 139, 255, 0.22);
+	--rim-glow: rgba(36, 139, 255, 0);
 	position: absolute;
 	inset: 3px;
 	border-radius: 50%;
-	background: radial-gradient(circle at 50% 40%, #1a0a12, #050506 75%);
+	background: radial-gradient(circle at 50% 40%, #0d213a, #050506 75%);
 	box-shadow:
 		0 1px 2px rgba(0, 0, 0, 0.6),
 		0 0 1px rgba(0, 0, 0, 0.5),
@@ -243,12 +243,12 @@ textarea:focus {
 }
 
 .dot-thinking .dot-disc {
-	--rim: rgba(255, 45, 122, 0.32);
+	--rim: rgba(36, 139, 255, 0.32);
 }
 
 .dot-working .dot-disc {
-	--rim: rgba(255, 45, 122, 0.45);
-	--rim-glow: rgba(255, 45, 122, 0.22);
+	--rim: rgba(36, 139, 255, 0.45);
+	--rim-glow: rgba(36, 139, 255, 0.22);
 }
 
 .dot-needs_you .dot-disc {
@@ -267,8 +267,8 @@ textarea:focus {
 
 /* In control of the Mac (S24.6): the accent rim glows steadily over every other state. */
 .dot-in_control .dot-disc {
-	--rim: rgba(240, 149, 200, 0.8);
-	--rim-glow: rgba(240, 149, 200, 0.35);
+	--rim: rgba(36, 139, 255, 0.8);
+	--rim-glow: rgba(36, 139, 255, 0.35);
 }
 
 /* Yolo mode (S24.9): the rim turns amber while risky actions run unasked; after in-control so it wins. */
@@ -522,7 +522,7 @@ textarea:focus {
 }
 
 .chat-panel {
-	background: rgba(26, 18, 24, 0.94);
+	background: rgba(11, 18, 32, 0.94);
 	border: 1px solid var(--line);
 	border-radius: var(--radius);
 	overflow: hidden;
@@ -576,8 +576,8 @@ html[data-effects="none"] .chat-panel {
 
 .rose-glyph {
 	flex: none;
-	color: #ff2d7a;
-	filter: drop-shadow(0 0 4px rgba(255, 45, 122, 0.45));
+	color: #248bff;
+	filter: drop-shadow(0 0 4px rgba(36, 139, 255, 0.45));
 }
 
 .state-dot {
@@ -596,7 +596,7 @@ html[data-effects="none"] .chat-panel {
 .state-thinking,
 .state-working {
 	background: var(--accent);
-	box-shadow: 0 0 8px rgba(240, 149, 200, 0.6);
+	box-shadow: 0 0 8px rgba(36, 139, 255, 0.6);
 	animation: pulse 1s var(--ease) infinite;
 }
 
@@ -843,7 +843,7 @@ html[data-effects="none"] .chat-panel {
 	padding: 9px 13px;
 	border-radius: var(--radius-lg) var(--radius-lg) 4px var(--radius-lg);
 	border: 1px solid var(--accent-line);
-	background: rgba(240, 149, 200, 0.16);
+	background: rgba(36, 139, 255, 0.16);
 	color: var(--text);
 }
 
@@ -1157,12 +1157,12 @@ html[data-effects="none"] .chat-panel {
 }
 
 .composer-send:hover:not(:disabled) {
-	background: #f4aad4;
-	border-color: #f4aad4;
+	background: #57abff;
+	border-color: #57abff;
 }
 
 .composer-send:not(:disabled) {
-	box-shadow: 0 6px 18px rgba(240, 149, 200, 0.3);
+	box-shadow: 0 6px 18px rgba(36, 139, 255, 0.3);
 }
 
 .composer-send:disabled {
@@ -1274,7 +1274,7 @@ html[data-effects="none"] .chat-panel {
 	border-radius: var(--radius-md);
 	border: 1px solid var(--accent-line);
 	background: var(--surface);
-	box-shadow: 0 10px 30px rgba(240, 149, 200, 0.08);
+	box-shadow: 0 10px 30px rgba(36, 139, 255, 0.08);
 }
 
 .onboarding p {
@@ -1454,11 +1454,11 @@ html[data-surface="glow"] body {
 		circle,
 		rgba(255, 255, 255, 0.9) 0 12%,
 		var(--accent) 28%,
-		rgba(240, 149, 200, 0) 70%
+		rgba(36, 139, 255, 0) 70%
 	);
 	box-shadow:
-		0 0 12px 4px rgba(240, 149, 200, 0.55),
-		0 0 32px 10px rgba(240, 149, 200, 0.25);
+		0 0 12px 4px rgba(36, 139, 255, 0.55),
+		0 0 32px 10px rgba(36, 139, 255, 0.25);
 }
 
 .glow-click::after {
@@ -1475,7 +1475,7 @@ html[data-surface="glow"] body {
 	width: 16px;
 	height: 16px;
 	margin: -8px 0 0 -8px;
-	box-shadow: 0 0 10px 3px rgba(240, 149, 200, 0.45);
+	box-shadow: 0 0 10px 3px rgba(36, 139, 255, 0.45);
 	animation: glow-blip 600ms var(--ease) both;
 }
 
@@ -1485,8 +1485,8 @@ html[data-surface="glow"] body {
 	margin-top: -3px;
 	border-radius: var(--radius-pill);
 	transform-origin: 0 50%;
-	background: linear-gradient(90deg, rgba(240, 149, 200, 0), var(--accent));
-	box-shadow: 0 0 14px 3px rgba(240, 149, 200, 0.45);
+	background: linear-gradient(90deg, rgba(36, 139, 255, 0), var(--accent));
+	box-shadow: 0 0 14px 3px rgba(36, 139, 255, 0.45);
 	animation: glow-trail 450ms var(--ease) both;
 }
 
@@ -1498,8 +1498,8 @@ html[data-surface="glow"] body {
 	border-radius: var(--radius-sm);
 	background: var(--accent-soft);
 	box-shadow:
-		0 0 14px 2px rgba(240, 149, 200, 0.5),
-		inset 0 0 10px rgba(240, 149, 200, 0.3);
+		0 0 14px 2px rgba(36, 139, 255, 0.5),
+		inset 0 0 10px rgba(36, 139, 255, 0.3);
 	animation: glow-blip 600ms var(--ease) both;
 }
 
@@ -1829,4 +1829,17 @@ html[data-surface="glow"] body {
 .voice-send-option.on {
 	border-color: var(--accent);
 	color: var(--accent);
+}
+
+/* Background voice extends the electric-blue rose; safety badges keep precedence. */
+.dot[data-voice="listening"]:not(.dot-in_control):not(.dot-needs_you) .rose-base { stroke: #36f5ff; filter: drop-shadow(0 0 5px #00cfff); }
+.dot[data-voice="listening"] .dot-disc { box-shadow: 0 0 calc(4px + var(--voice-level) * 24px) #00eaff; }
+.dot[data-voice="transcribing"]::after { content: ""; position: absolute; inset: 3px; border: 2px solid transparent; border-top-color: #30f0ff; border-radius: 50%; animation: voice-orbit 1s linear infinite; pointer-events: none; }
+.dot[data-voice="speaking"] .dot-disc { animation: voice-speak 0.8s ease-in-out infinite alternate; }
+.dot[data-voice="error"]::after { content: "!"; position: absolute; bottom: 0; right: 0; background: #ff653b; color: #fff; border-radius: 50%; width: 18px; height: 18px; }
+@keyframes voice-orbit { to { transform: rotate(360deg); } }
+@keyframes voice-speak { from { box-shadow: 0 0 5px #168bff; } to { box-shadow: 0 0 17px #43c5ff; } }
+@media (prefers-reduced-motion: reduce) {
+ .dot[data-voice]::after, .dot[data-voice] .dot-disc { animation: none; }
+ .dot[data-voice="speaking"] .dot-disc { box-shadow: 0 0 10px #43c5ff; }
 }

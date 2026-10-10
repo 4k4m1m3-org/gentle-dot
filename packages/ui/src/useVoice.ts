@@ -40,7 +40,7 @@ export interface VoiceControls {
 	cancel(): void;
 	stopSpeaking(): void;
 	setMuted(muted: boolean): void;
-	/** The user sent a typed message: its reply is not read aloud. */
+	/** Clear a previous pending voice turn while typing. */
 	typed(): void;
 	/** Whether a dictation is sent when recording stops, or left in the input for review. */
 	sendOnStop: boolean;
@@ -49,7 +49,7 @@ export interface VoiceControls {
 	draft?: { id: number; text: string };
 	/** The input took the draft. */
 	draftTaken(id: number): void;
-	/** The user sent the input: its reply is read aloud when it included a dictation. */
+	/** The user sent the input: read its reply aloud. */
 	sent(): void;
 }
 
@@ -172,7 +172,7 @@ export function useVoice(state: DotState, send: Send): VoiceControls {
 	const speak = useCallback(
 		(reply: string) => {
 			const text = speakableText(reply).slice(0, MAX_VOICE_TEXT);
-			if (!text || mutedNow.current) return;
+			if (!text || mutedNow.current || readFlag("gentle-dot-background-voice-active")) return;
 			if (!latest.current.voice.speak) {
 				speakWithSystem(text);
 				return;
@@ -225,7 +225,7 @@ export function useVoice(state: DotState, send: Send): VoiceControls {
 	}, []);
 
 	const sent = useCallback(() => {
-		voiceTurn.current = dictated.current ? new Set(latest.current.messages.map((m) => m.id)) : undefined;
+		voiceTurn.current = new Set(latest.current.messages.map((m) => m.id));
 		dictated.current = false;
 	}, []);
 
@@ -308,6 +308,10 @@ export function useVoice(state: DotState, send: Send): VoiceControls {
 	}, [begin, finish]);
 
 	const start = useCallback(() => {
+		if (readFlag("gentle-dot-background-voice-active")) {
+			setNote("Voice Mode está activo. Cancélalo antes de usar el micrófono del panel.");
+			return;
+		}
 		if (phaseNow.current !== "idle" || starting.current) return;
 		stopSpeaking();
 		if (source.kind === "none") return;
@@ -340,6 +344,20 @@ export function useVoice(state: DotState, send: Send): VoiceControls {
 		},
 		[stopSpeaking],
 	);
+
+	useEffect(() => {
+		const sync = () => {
+			const next = readFlag(MUTED_KEY);
+			setMutedState(next);
+			mutedNow.current = next;
+			if (next || readFlag("gentle-dot-background-voice-active")) {
+				voiceTurn.current = undefined;
+				stopSpeaking();
+			}
+		};
+		window.addEventListener("storage", sync);
+		return () => window.removeEventListener("storage", sync);
+	}, [stopSpeaking]);
 
 	const typed = useCallback(() => {
 		voiceTurn.current = undefined;
@@ -387,13 +405,14 @@ export function useVoice(state: DotState, send: Send): VoiceControls {
 					setSpeaking(true);
 					void player.play().catch(() => setSpeaking(false));
 				} else if (reply.type === "voice_unavailable") {
+					setNote(reply.reason);
 					speakWithSystem(speech.text);
 				}
 			}
 		}
 	}, [state.voiceReplies, sendTranscript, finish, speakWithSystem]);
 
-	// Read the reply to a spoken message aloud once the assistant finished it.
+	// Read the reply to any sent message aloud once the assistant finished it.
 	useEffect(() => {
 		const before = voiceTurn.current;
 		if (!before || isBusy(state.agentState)) return;

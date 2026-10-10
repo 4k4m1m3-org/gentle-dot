@@ -18,6 +18,7 @@ import {
 } from "./desktop.ts";
 import { createUploader } from "./uploads.ts";
 import { useComputerAvailable, useComputerState } from "./useComputer.ts";
+import { useBackgroundVoice } from "./useBackgroundVoice.ts";
 import { useDot } from "./useDot.ts";
 import { usePanelWindow } from "./usePanelWindow.ts";
 
@@ -71,6 +72,7 @@ function Assistant({ surface }: { surface: Surface }) {
 	conversations.current = state.features.conversations;
 	// Computer control lives in the desktop app only (S24.7); the panel registers the helper.
 	const desktop = inDesktop();
+	const backgroundVoice = useBackgroundVoice(desktop && surface === "dot", state, send);
 	const { session: computerSession, yolo } = useComputerState(desktop && surface !== "web");
 	const computerAvailable = useComputerAvailable(desktop && surface === "panel", state.connection === "open");
 	// Connector changes go through the app, on behalf of this window (S25.2); the web page has none.
@@ -103,8 +105,29 @@ function Assistant({ surface }: { surface: Surface }) {
 
 	useEffect(() => {
 		if (inDesktop()) {
-			connectionInfo().then(setInfo, () => setMissingToken(true));
-			return;
+			let live = true;
+			let retry: ReturnType<typeof setTimeout> | undefined;
+			const connect = () => {
+				void connectionInfo().then(
+					(value) => {
+						if (live) {
+							setInfo(value);
+							setMissingToken(false);
+						}
+					},
+					() => {
+						if (live) {
+							setMissingToken(true);
+							retry = setTimeout(connect, 2000);
+						}
+					},
+				);
+			};
+			connect();
+			return () => {
+				live = false;
+				clearTimeout(retry);
+			};
 		}
 		const found = browserConnection();
 		if (found) setInfo(found);
@@ -153,6 +176,7 @@ function Assistant({ surface }: { surface: Surface }) {
 	if (surface === "dot") {
 		return (
 			<DotSurface
+				voice={backgroundVoice}
 				agentState={state.agentState}
 				connected={state.connection === "open"}
 				inControl={computerSession !== undefined}

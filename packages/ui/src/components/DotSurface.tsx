@@ -1,5 +1,6 @@
 import type { AgentState } from "@gentle-dot/protocol";
-import { useRef } from "react";
+import type { VoiceModeView } from "../background-voice.ts";
+import { type CSSProperties, useRef } from "react";
 import { Rose, type RoseMood } from "../rose/Rose.tsx";
 
 const LABELS: Record<AgentState, string> = {
@@ -25,6 +26,7 @@ const MOODS: Record<AgentState, RoseMood> = {
 const DRAG_THRESHOLD_PX = 3;
 
 interface DotSurfaceProps {
+	voice?: VoiceModeView;
 	agentState: AgentState;
 	connected: boolean;
 	/** The assistant controls the Mac (S24.6); it shows over every other state. */
@@ -38,6 +40,7 @@ interface DotSurfaceProps {
 /** The collapsed, always-on-top rose in its black circle. A click opens the panel; a drag moves the window. */
 export function DotSurface({
 	agentState,
+	voice,
 	connected,
 	inControl = false,
 	yolo = false,
@@ -46,11 +49,19 @@ export function DotSurface({
 }: DotSurfaceProps) {
 	const press = useRef<{ x: number; y: number; dragging: boolean } | undefined>(undefined);
 	const state = connected ? agentState : "restarting";
-	const label = inControl ? "controlling your Mac" : LABELS[state];
+	const voiceActive = voice && !["idle", "cancelled"].includes(voice.phase);
+	const label = inControl
+		? "controlling your Mac"
+		: voiceActive
+			? `${voice.phase}${voice.note ? `: ${voice.note}` : ""}`
+			: LABELS[state];
 
 	return (
 		<button
 			type="button"
+			data-voice={voiceActive ? voice.phase : "idle"}
+			title={label}
+			style={{ "--voice-level": voice?.level ?? 0 } as CSSProperties}
 			className={`dot dot-${state}${inControl ? " dot-in_control" : ""}${yolo ? " dot-yolo" : ""}`}
 			aria-label={`Gentle Dot: ${label}${yolo ? ", yolo mode on" : ""}`}
 			onPointerDown={(event) => {
@@ -78,7 +89,17 @@ export function DotSurface({
 			}}
 		>
 			<span className="dot-disc" aria-hidden="true">
-				<Rose mood={inControl ? "control" : MOODS[state]} />
+				<Rose
+					mood={
+						inControl
+							? "control"
+							: state === "needs_you"
+								? "needs"
+								: voice?.phase === "processing"
+									? "thinking"
+									: MOODS[state]
+					}
+				/>
 			</span>
 			{state === "needs_you" ? (
 				<span className="dot-badge" aria-hidden="true">

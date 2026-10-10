@@ -4,7 +4,10 @@
 		{
 			"identifier": "default",
 			"description": "What the Dot and panel UI may call: event listening, Dot dragging, opening web pages (sign-in), the shell commands (hiding the rose and the full-screen panel included), and the computer-control commands (yolo mode included: its native confirmation decides).",
-			"windows": ["dot", "panel"],
+			"windows": [
+				"dot",
+				"panel"
+			],
 			"permissions": [
 				"core:event:allow-listen",
 				"core:event:allow-unlisten",
@@ -28,7 +31,9 @@
 		{
 			"identifier": "voice",
 			"description": "Voice input (S30.1, S30.5): the panel's mic button records and transcribes natively, and the panel downloads, cancels, and removes the optional local voice model; the Dot never records.",
-			"windows": ["panel"],
+			"windows": [
+				"panel"
+			],
 			"permissions": [
 				"allow-voice-status",
 				"allow-voice-start",
@@ -43,20 +48,50 @@
 		{
 			"identifier": "settings",
 			"description": "The panel's Settings screen (S33): read and change the shortcut that opens the panel; the Dot never changes it.",
-			"windows": ["panel"],
-			"permissions": ["allow-shortcut-get", "allow-shortcut-set"]
+			"windows": [
+				"panel"
+			],
+			"permissions": [
+				"allow-shortcut-get",
+				"allow-shortcut-set"
+			]
 		},
 		{
 			"identifier": "connectors",
 			"description": "Connector changes from the panel (S25.2): sent to the daemon over the app's private channel on behalf of the panel's window; the Dot and the web page cannot make them.",
-			"windows": ["panel"],
-			"permissions": ["allow-connector-command"]
+			"windows": [
+				"panel"
+			],
+			"permissions": [
+				"allow-connector-command"
+			]
 		},
 		{
 			"identifier": "glow",
 			"description": "What the computer-control glow overlay (S28) may call: listening to the glow and session events, nothing else.",
-			"windows": ["glow"],
-			"permissions": ["core:event:allow-listen", "core:event:allow-unlisten"]
+			"windows": [
+				"glow"
+			],
+			"permissions": [
+				"core:event:allow-listen",
+				"core:event:allow-unlisten"
+			]
+		},
+		{
+			"identifier": "background-voice",
+			"description": "Rose voice capture and bounded native audio playback. No model installation or shell execution.",
+			"windows": [
+				"dot"
+			],
+			"permissions": [
+				"allow-voice-status",
+				"allow-voice-start",
+				"allow-voice-stop",
+				"allow-voice-cancel",
+				"allow-voice-mode-poll",
+				"allow-voice-play",
+				"allow-voice-play-cancel"
+			]
 		}
 	]
 }

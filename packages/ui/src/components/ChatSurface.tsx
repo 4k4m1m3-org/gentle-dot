@@ -209,7 +209,7 @@ export function ChatSurface({
 				>
 					<ConnectorsIcon />
 				</button>
-				{voice.mic ? <MuteButton voice={voice} /> : null}
+				{voice.mic || state.voice.speak ? <MuteButton voice={voice} /> : null}
 				{conversations ? (
 					<button
 						type="button"

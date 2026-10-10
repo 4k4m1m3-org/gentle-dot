@@ -369,12 +369,12 @@ describe("spoken replies", () => {
 		expect(synth.current?.voice).toMatchObject({ name: "Paulina" });
 	});
 
-	it("does not read replies to typed messages", async () => {
+	it("reads replies to typed messages", async () => {
 		render(<Harness initial={withVoice(true, false)} />);
 		await userEvent.type(screen.getByRole("textbox", { name: "Message" }), "typed{Enter}");
 		reply("a1", "A typed answer.");
-		await new Promise((r) => setTimeout(r, 20));
-		expect(synth.speak).not.toHaveBeenCalled();
+		await waitFor(() => expect(synth.speak).toHaveBeenCalledTimes(1));
+		expect(synth.current?.text).toBe("A typed answer.");
 	});
 
 	it("uses the daemon's voice when it can speak, and plays the audio it returns", async () => {

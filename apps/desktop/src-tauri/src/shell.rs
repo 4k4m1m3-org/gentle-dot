@@ -49,6 +49,7 @@ const DRAG_SETTLE: Duration = Duration::from_millis(300);
 const DAEMON_START_TIMEOUT: Duration = Duration::from_secs(20);
 
 struct Shell {
+    voice_request: Mutex<Option<String>>,
     config: DesktopConfig,
     daemon: Arc<Daemon>,
     snap: mpsc::Sender<()>,
@@ -477,6 +478,7 @@ fn build_windows(
 ) -> tauri::Result<()> {
     let dot = WebviewWindowBuilder::new(app, DOT, WebviewUrl::App("index.html?surface=dot".into()))
         .title(DOT_TITLE)
+        .focused(false)
         .inner_size(DOT_SIZE.0, DOT_SIZE.1)
         .transparent(true)
         .decorations(false)
@@ -724,10 +726,29 @@ fn handle_launch(app: &AppHandle, args: &[String]) {
     let result = match platform::launch_request(args) {
         LaunchRequest::Toggle => toggle_panel(app.clone()),
         LaunchRequest::Show => show_panel(app),
+        LaunchRequest::VoiceToggle | LaunchRequest::VoiceCancel => {
+            *app.state::<Shell>().voice_request.lock().unwrap() = Some(
+                if platform::launch_request(args) == LaunchRequest::VoiceCancel { "cancel" } else { "toggle" }.into()
+            );
+            Ok(())
+        },
     };
     if let Err(error) = result {
         eprintln!("gentle-dot: cannot show the panel: {error}");
     }
+}
+
+
+/// Polling acknowledges startup only after the rose has subscribed to capture events and
+/// received the daemon history. A pending launch therefore cannot be lost at cold start.
+#[tauri::command]
+fn voice_mode_poll(app: AppHandle, ready: bool) -> CommandResult<serde_json::Value> {
+    let shell = app.state::<Shell>();
+    let mut pending = shell.voice_request.lock().unwrap();
+    if !ready && pending.as_deref() != Some("cancel") { return Ok(serde_json::Value::Null); }
+    let Some(action) = pending.take() else { return Ok(serde_json::Value::Null); };
+    let config = if action == "cancel" { voice::playback::Config::default() } else { voice::playback::load_config(&shell.config.data_dir)? };
+    Ok(serde_json::json!({"action": action, "config": config}))
 }
 
 pub fn run() {
@@ -763,6 +784,9 @@ pub fn run() {
             computer::computer_stop,
             computer::computer_status,
             computer::computer_set_yolo,
+            voice_mode_poll,
+            voice::playback::voice_play,
+            voice::playback::voice_play_cancel,
             voice::voice_status,
             voice::voice_start,
             voice::voice_stop,
@@ -797,6 +821,7 @@ pub fn run() {
             });
             let rose_hidden = position::load_rose_hidden(&desktop_file(&config));
             app.manage(Shell {
+                voice_request: Mutex::new(None),
                 config: config.clone(),
                 daemon,
                 snap: spawn_snapper(handle.clone()),
@@ -807,6 +832,7 @@ pub fn run() {
                 shortcut: Mutex::new(None),
             });
             let (voice_input, voice_model) = voice::start(&handle);
+            app.manage(voice::playback::Playback::default());
             app.manage(voice_input);
             app.manage(voice_model);
             #[cfg(target_os = "macos")]
@@ -834,7 +860,7 @@ pub fn run() {
             }
             // Started by the shortcut while not running: open the panel right away.
             let args: Vec<String> = std::env::args().collect();
-            if platform::launch_request(&args) == LaunchRequest::Toggle {
+            if platform::launch_request(&args) != LaunchRequest::Show {
                 handle_launch(&handle, &args);
             }
             Ok(())
@@ -843,6 +869,8 @@ pub fn run() {
         .expect("failed to build Gentle Dot")
         .run(|app, event| {
             if let RunEvent::Exit = event {
+                app.state::<voice::playback::Playback>().cancel();
+                let _ = app.state::<voice::VoiceInput>().cancel();
                 app.state::<Shell>().daemon.stop();
             }
         });

@@ -113,6 +113,7 @@ const HISTORY_PAGE = 100;
  * and broadcasts every agent event to all connected clients.
  */
 export class DotBridge {
+	private readonly speechJobs = new Map<BridgeClient, { requestId: string; abort: AbortController }>();
 	private readonly clients = new Set<BridgeClient>();
 	/** Each window's id, for the app's commands on its behalf. */
 	private readonly clientIds = new Map<string, BridgeClient>();
@@ -210,6 +211,8 @@ export class DotBridge {
 		if (this.interrupted) this.deliver(client, { type: "interrupted" });
 		return () => {
 			this.clients.delete(client);
+			this.speechJobs.get(client)?.abort.abort();
+			this.speechJobs.delete(client);
 			this.clientIds.delete(clientId);
 			this.options.auth?.cancelOwnedBy(client);
 			this.options.connectors?.cancelOwnedBy(client);
@@ -243,6 +246,14 @@ export class DotBridge {
 			await this.dispatch(client, message);
 		} catch (error) {
 			this.log(`command ${message.type} failed: ${(error as Error).message}`);
+			if (message.type === "send" && message.voiceConversation) {
+				this.deliver(client, {
+					type: "voice_unavailable",
+					requestId: message.requestId ?? "",
+					reason: "No se pudo enviar la pregunta. Revisa el panel y la conexión del asistente.",
+				});
+				return;
+			}
 			if (this.supervisor.state !== "ready") {
 				this.deliver(client, {
 					type: "error",
@@ -288,8 +299,24 @@ export class DotBridge {
 				const files = message.attachments ? this.attachedFiles(client, message.attachments) : [];
 				if (!files) return;
 				// Slash commands are typed alone; a message with files always goes to the assistant.
-				if (files.length === 0 && (await this.openScreen(client, message.text))) return;
+				if (!message.voiceConversation && files.length === 0 && (await this.openScreen(client, message.text)))
+					return;
 				await this.switching;
+				if (
+					message.voiceConversation &&
+					(this.supervisor.busy ||
+						this.sending > 0 ||
+						this.asks.size > 0 ||
+						this.state !== "idle" ||
+						message.voiceConversation !== this.conversationRef().conversationId)
+				) {
+					this.deliver(client, {
+						type: "voice_unavailable",
+						requestId: message.requestId ?? "",
+						reason: "El asistente está ocupado o cambió la conversación. Inténtalo de nuevo.",
+					});
+					return;
+				}
 				this.interrupted = false;
 				const busy = this.supervisor.busy;
 				const prompt =
@@ -398,9 +425,18 @@ export class DotBridge {
 					});
 				}
 				return;
+			case "voice_speech_cancel": {
+				const job = this.speechJobs.get(client);
+				if (job?.requestId === message.requestId) {
+					job.abort.abort();
+					this.speechJobs.delete(client);
+				}
+				return;
+			}
 			case "voice_transcribe":
 			case "voice_speak": {
 				const { requestId } = message;
+				if (this.alreadySeen(requestId)) return;
 				const voice = this.options.voice;
 				if (!voice) {
 					this.deliver(client, {
@@ -420,7 +456,16 @@ export class DotBridge {
 					);
 					return;
 				}
-				const result = await voice.speak(message.text);
+				this.speechJobs.get(client)?.abort.abort();
+				const job = { requestId, abort: new AbortController() };
+				this.speechJobs.set(client, job);
+				let result;
+				try {
+					result = await voice.speak(message.text, message.localWav, job.abort.signal);
+				} finally {
+					if (this.speechJobs.get(client) === job) this.speechJobs.delete(client);
+				}
+				if (job.abort.signal.aborted || !this.clients.has(client)) return;
 				this.deliver(
 					client,
 					result.ok

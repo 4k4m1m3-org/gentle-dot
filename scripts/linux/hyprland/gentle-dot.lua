@@ -47,3 +47,12 @@ if omarchy and omarchy.bind then
 else
   hl.bind("SUPER + ALT + D", hl.dsp.exec_cmd(toggle))
 end
+
+-- Voice Mode never opens the panel. Press again to finish listening or interrupt speech.
+local voice_toggle = toggle:gsub("%-%-toggle$", "--voice-toggle")
+if omarchy and omarchy.bind then
+  omarchy.bind("SUPER + ALT + I", "Gentle Dot Voice Mode", voice_toggle)
+else
+  hl.bind("SUPER + ALT + I", hl.dsp.exec_cmd(voice_toggle))
+end
+-- Explicit cancellation without sending: gentle-dot --voice-cancel
