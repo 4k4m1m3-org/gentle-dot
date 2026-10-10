@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { BackgroundVoice, type VoiceModeConfig, type VoiceModeView } from "./background-voice.ts";
 import { newRequestId, type Send } from "./components/types.ts";
 import type { DotState } from "./store.ts";
-import { startNativeVoice, stopNativeVoice, cancelNativeVoice, onNativeVoice } from "./voice-native.ts";
+import { cancelNativeVoice, onNativeVoice, startNativeVoice, stopNativeVoice } from "./voice-native.ts";
 
 export function useBackgroundVoice(enabled: boolean, state: DotState, send: Send) {
 	const [view, setView] = useState<VoiceModeView>({ phase: "idle", level: 0, note: "" });

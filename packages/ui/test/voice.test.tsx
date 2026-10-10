@@ -425,6 +425,19 @@ describe("spoken replies", () => {
 		await userEvent.click(talk());
 		expect(synth.cancel).toHaveBeenCalled();
 	});
+
+	it("stops speech from the previous conversation when its history is replaced", async () => {
+		render(<Harness initial={{ ...withVoice(true, false), conversationId: "first" }} />);
+		await userEvent.type(screen.getByRole("textbox", { name: "Message" }), "typed{Enter}");
+		server({ type: "user_message", messageId: "u1", text: "typed" });
+		reply("a1", "A spoken answer from the first conversation.");
+		await waitFor(() => expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument());
+
+		server({ type: "history", conversationId: "second", messages: [] });
+
+		await waitFor(() => expect(screen.queryByRole("button", { name: "Stop" })).not.toBeInTheDocument());
+		expect(synth.cancel).toHaveBeenCalled();
+	});
 });
 
 describe("the composer with the mic present", () => {

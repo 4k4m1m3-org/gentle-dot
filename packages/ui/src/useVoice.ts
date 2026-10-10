@@ -122,6 +122,7 @@ export function useVoice(state: DotState, send: Send): VoiceControls {
 	const audio = useRef<HTMLAudioElement | undefined>(undefined);
 	/** A reply to a spoken message is awaited: the ids of the messages shown before it. */
 	const voiceTurn = useRef<Set<string> | undefined>(undefined);
+	const conversationId = useRef(state.conversationId);
 	const latest = useRef(state);
 	latest.current = state;
 	const mutedNow = useRef(muted);
@@ -183,6 +184,15 @@ export function useVoice(state: DotState, send: Send): VoiceControls {
 		},
 		[send, speakWithSystem],
 	);
+
+	// Speech belongs to the conversation that produced it. A history/session change
+	// must stop playback and discard any pending spoken turn from the old chat.
+	useEffect(() => {
+		if (conversationId.current === state.conversationId) return;
+		conversationId.current = state.conversationId;
+		voiceTurn.current = undefined;
+		stopSpeaking();
+	}, [state.conversationId, stopSpeaking]);
 
 	const [sendOnStop, setSendOnStopState] = useState(readFlag(SEND_KEY));
 	const sendOnStopNow = useRef(sendOnStop);

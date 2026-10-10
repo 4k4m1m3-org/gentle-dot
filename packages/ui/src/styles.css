@@ -1832,14 +1832,56 @@ html[data-surface="glow"] body {
 }
 
 /* Background voice extends the electric-blue rose; safety badges keep precedence. */
-.dot[data-voice="listening"]:not(.dot-in_control):not(.dot-needs_you) .rose-base { stroke: #36f5ff; filter: drop-shadow(0 0 5px #00cfff); }
-.dot[data-voice="listening"] .dot-disc { box-shadow: 0 0 calc(4px + var(--voice-level) * 24px) #00eaff; }
-.dot[data-voice="transcribing"]::after { content: ""; position: absolute; inset: 3px; border: 2px solid transparent; border-top-color: #30f0ff; border-radius: 50%; animation: voice-orbit 1s linear infinite; pointer-events: none; }
-.dot[data-voice="speaking"] .dot-disc { animation: voice-speak 0.8s ease-in-out infinite alternate; }
-.dot[data-voice="error"]::after { content: "!"; position: absolute; bottom: 0; right: 0; background: #ff653b; color: #fff; border-radius: 50%; width: 18px; height: 18px; }
-@keyframes voice-orbit { to { transform: rotate(360deg); } }
-@keyframes voice-speak { from { box-shadow: 0 0 5px #168bff; } to { box-shadow: 0 0 17px #43c5ff; } }
+.dot[data-voice="listening"]:not(.dot-in_control):not(.dot-needs_you) .rose-base {
+	stroke: #36f5ff;
+	filter: drop-shadow(0 0 5px #00cfff);
+}
+.dot[data-voice="listening"] .dot-disc {
+	box-shadow: 0 0 calc(4px + var(--voice-level) * 24px) #00eaff;
+}
+.dot[data-voice="transcribing"]::after {
+	content: "";
+	position: absolute;
+	inset: 3px;
+	border: 2px solid transparent;
+	border-top-color: #30f0ff;
+	border-radius: 50%;
+	animation: voice-orbit 1s linear infinite;
+	pointer-events: none;
+}
+.dot[data-voice="speaking"] .dot-disc {
+	animation: voice-speak 0.8s ease-in-out infinite alternate;
+}
+.dot[data-voice="error"]::after {
+	content: "!";
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	background: #ff653b;
+	color: #fff;
+	border-radius: 50%;
+	width: 18px;
+	height: 18px;
+}
+@keyframes voice-orbit {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@keyframes voice-speak {
+	from {
+		box-shadow: 0 0 5px #168bff;
+	}
+	to {
+		box-shadow: 0 0 17px #43c5ff;
+	}
+}
 @media (prefers-reduced-motion: reduce) {
- .dot[data-voice]::after, .dot[data-voice] .dot-disc { animation: none; }
- .dot[data-voice="speaking"] .dot-disc { box-shadow: 0 0 10px #43c5ff; }
+	.dot[data-voice]::after,
+	.dot[data-voice] .dot-disc {
+		animation: none;
+	}
+	.dot[data-voice="speaking"] .dot-disc {
+		box-shadow: 0 0 10px #43c5ff;
+	}
 }
