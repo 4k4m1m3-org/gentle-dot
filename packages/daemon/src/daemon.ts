@@ -27,13 +27,13 @@ import { approvalRequest } from "./extensions/approval-guard.ts";
 import { ensureMemoryProject, ensurePrivateDir, isolatedAgentEnv, privateMemory } from "./isolation.ts";
 import { MCP_PREFIX, McpProxy, type ProxiedConnector, type UpstreamCredentials } from "./mcp-proxy.ts";
 import { configureOllamaProvider, discoverOllama, type OllamaDiscovery } from "./ollama.ts";
+import { loadPiperConfig } from "./piper-local.ts";
 import { defaultImportPath, ProfileStore } from "./profiles.ts";
 import { type RotationLimits, rotationLimits } from "./rotation.ts";
 import { AppSecretSource } from "./secret-source.ts";
 import { AgentSupervisor } from "./supervisor.ts";
 import { UploadStore } from "./uploads.ts";
 import { VoiceService } from "./voice.ts";
-import { loadPiperConfig } from "./piper-local.ts";
 import { identityArgs } from "./white-label.ts";
 
 export interface DaemonOptions {
