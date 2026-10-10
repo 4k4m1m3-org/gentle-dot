@@ -26,6 +26,7 @@ import {
 import { approvalRequest } from "./extensions/approval-guard.ts";
 import { ensureMemoryProject, ensurePrivateDir, isolatedAgentEnv, privateMemory } from "./isolation.ts";
 import { MCP_PREFIX, McpProxy, type ProxiedConnector, type UpstreamCredentials } from "./mcp-proxy.ts";
+import { configureOllamaProvider, discoverOllama, type OllamaDiscovery } from "./ollama.ts";
 import { defaultImportPath, ProfileStore } from "./profiles.ts";
 import { type RotationLimits, rotationLimits } from "./rotation.ts";
 import { AppSecretSource } from "./secret-source.ts";
@@ -151,6 +152,25 @@ export async function startDaemon(options: DaemonOptions): Promise<DotDaemon> {
 		agentEnv.GENTLE_PI_CONFIG_HOME = join(options.dataDir, "gentle-ai");
 	}
 	const agentHome = options.agentHome ?? resolveAgentHome(process.env, options.dataDir);
+	const env = options.agentEnv ?? process.env;
+	// Let Gentle Shell claim and provision a brand-new explicit home itself.
+	// Creating it here would make its launcher treat daemon files as foreign content.
+	const firstAgentHome = Boolean(options.agentHome && !existsSync(agentHome));
+	let deferAgentHomeFiles = firstAgentHome;
+	if (!deferAgentHomeFiles) mkdirSync(agentHome, { recursive: true, mode: 0o700 });
+	// Discover first, but do not write models.json until Gentle Shell has had a
+	// chance to provision a brand-new --home. Its first-run setup intentionally
+	// refuses to initialize directories that already contain user files.
+	let ollama: OllamaDiscovery = await discoverOllama(env.GENTLE_DOT_OLLAMA_URL, globalThis.fetch).catch(
+		(error: Error) => {
+			log(`Ollama discovery failed: ${error.message}`);
+			return { status: "error" as const, models: [] as [], message: error.message };
+		},
+	);
+	if (ollama.status === "available") log(`Ollama is available with ${ollama.models.length} local model(s).`);
+	else if (ollama.status === "no_models") log("Ollama is running but has no installed models.");
+	else if (ollama.status === "unavailable") log("Ollama is configured but not running.");
+	else if (ollama.status === "error") log(`Ollama could not be queried: ${ollama.message}`);
 	const app = options.appChannel
 		? new AppChannel(options.appChannel, {
 				log,
@@ -204,8 +224,10 @@ export async function startDaemon(options: DaemonOptions): Promise<DotDaemon> {
 		// its policy from the daemon's memory, never from the files.
 		// The proxy's key changes with every launch (after the check, so a change is still reported).
 		prepareSpawn: () => {
-			connectors.enforce();
-			connectorStore.setProxy({ url: `http://127.0.0.1:${port}/mcp`, key: proxy.rotateKey() });
+			if (!deferAgentHomeFiles) {
+				connectors.enforce();
+				connectorStore.setProxy({ url: `http://127.0.0.1:${port}/mcp`, key: proxy.rotateKey() });
+			}
 			return policyEnv(connectorStore);
 		},
 		// The first start in a new home installs the engine's companion packages.
@@ -214,7 +236,13 @@ export async function startDaemon(options: DaemonOptions): Promise<DotDaemon> {
 		log: (line) => log(`[agent] ${line}`),
 	});
 	const auth = new AuthManager({
-		runtime: options.authRuntime ?? (() => createModelAuthRuntime(agentHome, options.workspace)),
+		runtime:
+			options.authRuntime ??
+			(() =>
+				createModelAuthRuntime(agentHome, options.workspace, {
+					ollamaConfigured: Boolean(env.GENTLE_DOT_OLLAMA_URL),
+					ollamaAvailable: ollama.status === "available",
+				})),
 		log,
 	});
 	const profiles = new ProfileStore({
@@ -273,7 +301,7 @@ export async function startDaemon(options: DaemonOptions): Promise<DotDaemon> {
 		);
 
 	// The files as the daemon writes them (an older version kept a hash), then watched.
-	connectorStore.enforce(false);
+	if (!deferAgentHomeFiles) connectorStore.enforce(false);
 	connectorStore.watch();
 
 	const server = createServer((req, res) => {
@@ -307,6 +335,28 @@ export async function startDaemon(options: DaemonOptions): Promise<DotDaemon> {
 	port = (server.address() as AddressInfo).port;
 
 	await supervisor.start().catch((error: Error) => log(`agent failed to start: ${error.message}; retrying`));
+	if (firstAgentHome) {
+		// The first Gentle Shell launch has provisioned the empty home. Restore
+		// the daemon-owned connector files before clients can use the daemon.
+		deferAgentHomeFiles = false;
+		connectorStore.enforce(false);
+		connectorStore.setProxy({ url: `http://127.0.0.1:${port}/mcp`, key: proxy.rotateKey() });
+	}
+	if (env.GENTLE_DOT_OLLAMA_URL) {
+		ollama = await configureOllamaProvider(agentHome, env.GENTLE_DOT_OLLAMA_URL, globalThis.fetch).catch(
+			(error: Error) => {
+				log(`Ollama provider configuration failed: ${error.message}`);
+				return { status: "error" as const, models: [] as [], message: error.message };
+			},
+		);
+	}
+	if (firstAgentHome || env.GENTLE_DOT_OLLAMA_URL) {
+		// Reload first-run connector setup and local models through the existing
+		// supervisor, preserving the conversation and safety controls.
+		await supervisor
+			.restart()
+			.catch((error: Error) => log(`agent restart for local providers failed: ${error.message}`));
+	}
 
 	return {
 		port,
