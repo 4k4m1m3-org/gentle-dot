@@ -30,6 +30,7 @@ import {
 	resolveConversation,
 } from "./conversations.ts";
 import { DRAFT_STATUS_KEY } from "./extensions/approval-guard.ts";
+import { quickVoiceMarker, stripQuickVoiceMarker } from "./extensions/quick-conversation.ts";
 import { describeTool, textOf } from "./presentation.ts";
 import {
 	LiveModelSwitch,
@@ -43,7 +44,7 @@ import {
 import { DEFAULT_ROTATION, type RotationLimits, SessionRotator } from "./rotation.ts";
 import type { AgentRecord, AgentSupervisor, SupervisorEvent } from "./supervisor.ts";
 import { composePrompt, type StoredFile, splitAttachments, type UploadStore } from "./uploads.ts";
-import type { VoiceService } from "./voice.ts";
+import type { VoiceResult, VoiceService } from "./voice.ts";
 import { isBlockedInput, presentText, shouldShowToast } from "./white-label.ts";
 
 export interface BridgeClient {
@@ -323,10 +324,16 @@ export class DotBridge {
 					files.length > 0
 						? composePrompt(message.text, files, { images: this.supervisor.modelImages })
 						: { message: message.text };
+				// Voice Mode opts into the extension's quick route; typed chat keeps full Agent mode.
+				const agentPrompt = message.voiceConversation
+					? { ...prompt, message: `${prompt.message}${quickVoiceMarker()}` }
+					: prompt;
 				this.sending += 1;
 				try {
 					await this.supervisor.request(
-						busy ? { type: "prompt", ...prompt, streamingBehavior: "steer" } : { type: "prompt", ...prompt },
+						busy
+							? { type: "prompt", ...agentPrompt, streamingBehavior: "steer" }
+							: { type: "prompt", ...agentPrompt },
 					);
 					if (message.attachments) this.options.uploads?.consume(message.attachments);
 				} finally {
@@ -459,7 +466,7 @@ export class DotBridge {
 				this.speechJobs.get(client)?.abort.abort();
 				const job = { requestId, abort: new AbortController() };
 				this.speechJobs.set(client, job);
-				let result;
+				let result: VoiceResult<{ mime: string; data: string }>;
 				try {
 					result = await voice.speak(message.text, message.localWav, job.abort.signal);
 				} finally {
@@ -1148,7 +1155,7 @@ export class DotBridge {
 	private onMessageStart(event: AgentRecord): void {
 		const message = event.message as { role?: string } | undefined;
 		if (message?.role === "user") {
-			const { text, attachments } = splitAttachments(textOf(message));
+			const { text, attachments } = splitAttachments(stripQuickVoiceMarker(textOf(message)));
 			this.broadcast({
 				type: "user_message",
 				messageId: `u${++this.nextMessage}`,

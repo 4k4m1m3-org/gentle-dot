@@ -4,6 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import type { AddressInfo } from "node:net";
 import { extname, join, resolve, sep } from "node:path";
 import type { Duplex } from "node:stream";
+import { fileURLToPath } from "node:url";
 import type { McpTransport } from "@earendil-works/pi-mcp";
 import {
 	type AttachmentLimits,
@@ -35,6 +36,10 @@ import { AgentSupervisor } from "./supervisor.ts";
 import { UploadStore } from "./uploads.ts";
 import { VoiceService } from "./voice.ts";
 import { identityArgs } from "./white-label.ts";
+
+export const QUICK_VOICE_EXTENSION = fileURLToPath(
+	new URL("./extensions/quick-conversation.ts", import.meta.url),
+);
 
 export interface DaemonOptions {
 	port: number;
@@ -216,6 +221,8 @@ export async function startDaemon(options: DaemonOptions): Promise<DotDaemon> {
 			...identityArgs(options.dataDir),
 			...folderArgs,
 			...guardArgs,
+			"-e",
+			QUICK_VOICE_EXTENSION,
 			...(options.agentExtraArgs ?? []),
 		],
 		cwd: options.workspace,

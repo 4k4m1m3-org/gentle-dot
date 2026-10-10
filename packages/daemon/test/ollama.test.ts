@@ -132,6 +132,9 @@ describe.skipIf(!realOllamaEnabled)("@real-agent local Ollama", () => {
 		if (!endpoint) throw new Error("GENTLE_DOT_OLLAMA_URL is required for this real-agent test.");
 		const dataDir = tempDir();
 		dirs.push(dataDir);
+		const piperConfigPath = process.env.GENTLE_DOT_REAL_PIPER_CONFIG;
+		if (piperConfigPath)
+			writeFileSync(join(dataDir, "piper.json"), readFileSync(piperConfigPath), { mode: 0o600 });
 		const agentHome = join(dataDir, "agent");
 		const workspace = join(dataDir, "workspace");
 		mkdirSync(workspace, { recursive: true });
@@ -157,7 +160,7 @@ describe.skipIf(!realOllamaEnabled)("@real-agent local Ollama", () => {
 			log: (line) => logs.push(line),
 		});
 		daemons.push(daemon);
-		expect(daemon.supervisor.state).toBe("ready");
+		expect(daemon.supervisor.state, JSON.stringify(logs)).toBe("ready");
 		expect(logs.some((line) => line.includes("Ollama is available"))).toBe(true);
 		const config = JSON.parse(readFileSync(join(agentHome, "models.json"), "utf8"));
 		expect(config.providers.ollama.models).toContainEqual(
@@ -194,7 +197,7 @@ describe.skipIf(!realOllamaEnabled)("@real-agent local Ollama", () => {
 				300_000,
 			);
 		send({ type: "hello", token: daemon.token, protocol: 1 });
-		await find("ready");
+		const ready = await find("ready");
 		send({ type: "auth_list" });
 		const auth = await find("auth_providers");
 		expect(auth.providers.find(({ id }) => id === "ollama")).toMatchObject({ configured: true });
@@ -222,10 +225,11 @@ describe.skipIf(!realOllamaEnabled)("@real-agent local Ollama", () => {
 		});
 
 		const question = "Responde en español exactamente con esta frase: Hola, soy ELA.";
+		const fastQuestionStartedAt = Date.now();
 		let answer: Extract<ServerMessage, { type: "message_done" }> | undefined;
 		for (let attempt = 0; attempt < 2 && !answer?.text; attempt++) {
 			eventStart = messages.length;
-			send({ type: "send", text: question });
+			send({ type: "send", text: question, voiceConversation: ready.conversationId });
 			const outcome = await waitFor(() => {
 				const current = messages.slice(eventStart);
 				const ask = current.find((message) => message.type === "ask");
@@ -265,8 +269,66 @@ describe.skipIf(!realOllamaEnabled)("@real-agent local Ollama", () => {
 			answer.text.toLowerCase(),
 			JSON.stringify({ logs, done: messages.filter((message) => message.type === "message_done") }),
 		).toContain("hola");
+		await waitFor(
+			() => logs.some((line) => line.includes("[gentle-dot-fast-voice]") && line.includes('"stage":"model"')),
+			10_000,
+		);
+		expect(
+			logs.some((line) => line.includes("[gentle-dot-fast-voice]") && line.includes('"tools":0')),
+			JSON.stringify(logs),
+		).toBe(true);
+		const fastMetrics = logs
+			.map((line) => line.match(/\[gentle-dot-fast-voice\] (\{.*\})/)?.[1])
+			.filter((line): line is string => Boolean(line))
+			.map((line) => JSON.parse(line) as Record<string, unknown>);
+		console.log(
+			`REAL_OLLAMA_FAST ${JSON.stringify({ wall_ms: Date.now() - fastQuestionStartedAt, metrics: fastMetrics })}`,
+		);
+		const followupQuestion = "¿Cuál fue la pregunta anterior? Cópiala exactamente.";
+		const followupStartedAt = Date.now();
+		eventStart = messages.length;
+		send({ type: "send", text: followupQuestion, voiceConversation: ready.conversationId });
+		const followup = await find("message_done", (message) => Boolean(message.text), eventStart);
+		await waitFor(
+			() =>
+				logs.filter((line) => line.includes("[gentle-dot-fast-voice]") && line.includes('"stage":"model"'))
+					.length >= 2,
+			10_000,
+		);
+		console.log(
+			`REAL_OLLAMA_FAST_FOLLOWUP ${JSON.stringify({
+				wall_ms: Date.now() - followupStartedAt,
+				text: followup.text,
+				metrics: logs
+					.map((line) => line.match(/\[gentle-dot-fast-voice\] (\{.*\})/)?.[1])
+					.filter((line): line is string => Boolean(line))
+					.map((line) => JSON.parse(line) as Record<string, unknown>),
+			})}`,
+		);
+		// Qwen 2.5 3B may deny it has history even when the latest exchange is in
+		// its request; assert delivery here and persistence below, not recall quality.
+		expect(followup.text.length).toBeGreaterThan(0);
+		expect(
+			logs.some(
+				(line) =>
+					line.includes('"stage":"context_window"') && line.includes('"roles":["user","assistant","user"]'),
+			),
+		).toBe(true);
+		if (piperConfigPath) {
+			const requestId = "real-piper-synthesis";
+			const piperStartedAt = Date.now();
+			eventStart = messages.length;
+			send({ type: "voice_speak", requestId, text: answer.text.slice(0, 120), localWav: true });
+			const speech = await find("voice_speech", (message) => message.requestId === requestId, eventStart);
+			expect(speech.data.length).toBeGreaterThan(0);
+			expect(logs.some((line) => line.includes("timing stage=piper_synthesis"))).toBe(true);
+			console.log(
+				`REAL_PIPER ${JSON.stringify({ wall_ms: Date.now() - piperStartedAt, metrics: logs.filter((line) => line.includes("timing stage=piper_synthesis")) })}`,
+			);
+		}
 
 		const toolPrompt = `Usa la herramienta read para leer el archivo ${join(workspace, "ollama-tool-probe.txt")}. Responde con su contenido exacto.`;
+		const toolStartedAt = Date.now();
 		eventStart = messages.length;
 		send({ type: "send", text: toolPrompt });
 		const toolResult = await waitFor(() => {
@@ -278,6 +340,14 @@ describe.skipIf(!realOllamaEnabled)("@real-agent local Ollama", () => {
 			);
 			return activity?.type === "activity" ? { kind: "tool" as const, activity } : undefined;
 		}, 20_000).catch(() => undefined);
+		console.log(
+			`REAL_OLLAMA_FULL_TOOL ${JSON.stringify({
+				wall_ms: Date.now() - toolStartedAt,
+				result: toolResult?.kind ?? "no_tool_call_within_20s",
+				marker_observed_if_executed:
+					toolResult?.kind === "tool" ? toolResult.activity.activity.kind : undefined,
+			})}`,
+		);
 		if (toolResult?.kind === "approval")
 			throw new Error(
 				`Qwen requested user approval for the read-tool prompt; approval was left pending: ${JSON.stringify(toolResult.ask)}`,
@@ -286,16 +356,25 @@ describe.skipIf(!realOllamaEnabled)("@real-agent local Ollama", () => {
 		// Gentle Dot's neutral activity label), or fail to produce a tool call.
 		// Preserve that observed limitation and its conversation, without weakening
 		// tool policy or auto-approving a request.
-		if (toolResult?.kind === "tool" && toolResult.activity.activity.status === "running") {
-			await waitFor(
-				() =>
-					messages.some(
-						(message) =>
-							message.type === "activity" &&
-							message.activity.id === toolResult.activity.activity.id &&
-							(message.activity.status === "done" || message.activity.status === "failed"),
-					),
-				60_000,
+		if (toolResult?.kind === "tool") {
+			const currentStatus = toolResult.activity.activity.status;
+			const completedActivity =
+				currentStatus === "running"
+					? await waitFor(() => {
+							const ended = messages.find(
+								(message) =>
+									message.type === "activity" &&
+									message.activity.id === toolResult.activity.activity.id &&
+									(message.activity.status === "done" || message.activity.status === "failed"),
+							);
+							return ended?.type === "activity" ? ended.activity.status : undefined;
+						}, 60_000)
+					: currentStatus;
+			console.log(
+				`REAL_OLLAMA_FULL_TOOL_RESULT ${JSON.stringify({
+					id: toolResult.activity.activity.id,
+					status: completedActivity,
+				})}`,
 			);
 		}
 		await daemon.supervisor.restart();
@@ -311,6 +390,7 @@ describe.skipIf(!realOllamaEnabled)("@real-agent local Ollama", () => {
 			message.messages.some((entry) => JSON.stringify(entry).includes(question)),
 		);
 		expect(JSON.stringify(history.messages)).toContain(question);
+		expect(JSON.stringify(history.messages)).toContain(followupQuestion);
 		expect(JSON.stringify(history.messages)).toContain(toolPrompt);
 	});
 });

@@ -42,6 +42,7 @@ describe("build:runtime", () => {
 			"bin/pi",
 			"daemon/cli.mjs",
 			"daemon/extensions/approval-guard.ts",
+			"daemon/extensions/quick-conversation.ts",
 			"daemon/extensions/screenshot-context.ts",
 			"daemon/identity.md",
 			"daemon/package.json",
@@ -51,6 +52,9 @@ describe("build:runtime", () => {
 		);
 		expect(readFileSync(join(out, "daemon", "extensions", "approval-guard.ts"), "utf8")).toBe(
 			readFileSync(join(PACKAGE, "src", "extensions", "approval-guard.ts"), "utf8"),
+		);
+		expect(readFileSync(join(out, "daemon", "extensions", "quick-conversation.ts"), "utf8")).toBe(
+			readFileSync(join(PACKAGE, "src", "extensions", "quick-conversation.ts"), "utf8"),
 		);
 	});
 
@@ -101,6 +105,9 @@ describe("build:runtime", () => {
 			engramBin: "/x/engram",
 		});
 		expect(realpathSync(report.approvalGuard)).toBe(join(real, "daemon", "extensions", "approval-guard.ts"));
+		expect(realpathSync(report.quickVoiceExtension)).toBe(
+			join(real, "daemon", "extensions", "quick-conversation.ts"),
+		);
 		expect(realpathSync(report.identity)).toBe(join(real, "daemon", "identity.md"));
 	});
 
