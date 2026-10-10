@@ -159,11 +159,13 @@ export class BackgroundVoice {
 				this.fail("No reconocí texto. Inténtalo de nuevo.");
 				return;
 			}
-			if (!this.available() || this.conversation !== this.state?.conversationId) {
+			const state = this.state;
+			const conversation = this.conversation;
+			if (!this.available() || !state || !conversation || conversation !== state.conversationId) {
 				this.fail("El asistente está ocupado o cambió la conversación.");
 				return;
 			}
-			this.before = new Set(this.state!.messages.map((m) => m.id));
+			this.before = new Set(state.messages.map((m) => m.id));
 			this.requestId = this.host.id();
 			this.submitted = true;
 			this.submittedText = text;
@@ -173,7 +175,7 @@ export class BackgroundVoice {
 				type: "send",
 				text,
 				requestId: this.requestId,
-				voiceConversation: this.conversation!,
+				voiceConversation: conversation,
 			});
 		} catch (error) {
 			if (generation === this.generation) this.fail(String(error));
@@ -211,7 +213,7 @@ export class BackgroundVoice {
 			}
 			const added = state.messages.filter((m) => !this.before.has(m.id));
 			const users = added.filter((m) => m.role === "user");
-			if (users.length > 1 || (users.length === 1 && users[0]!.text !== this.submittedText)) {
+			if (users.length > 1 || (users.length === 1 && users.at(0)?.text !== this.submittedText)) {
 				this.fail("Otra intervención cambió el turno. Consulta el panel.");
 				return;
 			}

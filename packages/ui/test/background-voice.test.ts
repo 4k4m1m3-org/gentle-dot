@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { BackgroundVoice, type VoiceModeConfig } from "../src/background-voice.ts";
-import { initialState, type DotState } from "../src/store.ts";
+import { type DotState, initialState } from "../src/store.ts";
+
 const config: VoiceModeConfig = {
 	enabled: true,
 	spokenReplies: true,
@@ -132,13 +133,20 @@ describe("background voice", () => {
 		const { voice, host, state } = setup();
 		await voice.toggle(config);
 		await voice.toggle(config);
+		const assistantMessage = {
+			id: "a",
+			role: "assistant" as const,
+			text: "Respuesta",
+			streaming: true,
+			activities: [],
+		};
 		const messages = [
 			{ id: "u", role: "user" as const, text: "Hola", streaming: false, activities: [] },
-			{ id: "a", role: "assistant" as const, text: "Respuesta", streaming: true, activities: [] },
+			assistantMessage,
 		];
 		voice.update({ ...state, agentState: "thinking", messages });
 		expect(host.send).toHaveBeenCalledTimes(1);
-		messages[1]!.streaming = false;
+		assistantMessage.streaming = false;
 		voice.update({ ...state, messages });
 		voice.update({ ...state, messages });
 		expect(host.send).toHaveBeenCalledTimes(2);

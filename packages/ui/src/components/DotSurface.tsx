@@ -1,6 +1,6 @@
 import type { AgentState } from "@gentle-dot/protocol";
-import type { VoiceModeView } from "../background-voice.ts";
 import { type CSSProperties, useRef } from "react";
+import type { VoiceModeView } from "../background-voice.ts";
 import { Rose, type RoseMood } from "../rose/Rose.tsx";
 
 const LABELS: Record<AgentState, string> = {

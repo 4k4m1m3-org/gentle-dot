@@ -17,8 +17,8 @@ import {
 	togglePanel,
 } from "./desktop.ts";
 import { createUploader } from "./uploads.ts";
-import { useComputerAvailable, useComputerState } from "./useComputer.ts";
 import { useBackgroundVoice } from "./useBackgroundVoice.ts";
+import { useComputerAvailable, useComputerState } from "./useComputer.ts";
 import { useDot } from "./useDot.ts";
 import { usePanelWindow } from "./usePanelWindow.ts";
 

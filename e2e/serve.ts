@@ -30,6 +30,8 @@ if (!conversations) {
 
 // Provider keys in the developer's environment would mark accounts as connected.
 delete process.env.OPENAI_API_KEY;
+// A host Ollama would register a local provider and change onboarding in these isolated tests.
+delete process.env.GENTLE_DOT_OLLAMA_URL;
 // Never offer to import the developer's own profiles.
 process.env.GENTLE_PI_CONFIG_HOME = join(dataDir, "no-shell-profiles");
 // Profiles are applied to <dataDir>/agent; the fake agent records the live model switch.
