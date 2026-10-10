@@ -19,9 +19,9 @@ Primer candidato de desarrollo de **ELA — Local AI Desktop Assistant**, basado
 ### Validación del candidato
 
 - `pnpm typecheck`, `pnpm lint` (sin errores ni advertencias), `pnpm test`, compilación de interfaz y compilación de Tauri `--no-bundle`: aprobados.
-- Suite TypeScript: 694 aprobadas y 6 omitidas. Pruebas Rust: 362 aprobadas y 2 omitidas porque requieren el modelo Parakeet real.
+- Suite TypeScript: 695 aprobadas y 6 omitidas. Pruebas Rust: 362 aprobadas y 2 omitidas porque requieren el modelo Parakeet real.
 - Compilación del runtime y su self-check empaquetado: aprobados.
-- Playwright E2E: un caso de cambio de conversación falla de forma reproducible porque el botón `Stop` permanece visible después del cambio; los otros 16 casos pasan con el entorno Ollama aislado. El candidato necesita resolver o aceptar expresamente esta incidencia antes de considerarse listo para publicar.
+- Playwright E2E: 17/17 aprobadas. Al cambiar de conversación se cancela la reproducción de voz que pertenecía al chat anterior, evitando que `Stop` permanezca visible cuando el agente ya está en `idle`.
 
 ### Limitaciones conocidas
 
