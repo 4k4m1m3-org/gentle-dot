@@ -178,7 +178,7 @@ En el equipo de referencia, la Quadro P620 no fue utilizada por la compilación 
 - Los modelos pequeños, incluido Qwen 2.5 3B, pueden responder bien en conversación breve y aun así producir llamadas de herramientas inválidas, omitirlas o fallar con salidas estructuradas. Usa el Agente completo con supervisión; no se desactivan las políticas de herramientas ni las aprobaciones.
 - Voz Rápida no puede ejecutar acciones ni inspeccionar archivos: si la solicitud necesita herramientas, utiliza el chat escrito en modo Agente completo.
 - La captura real de micrófono y la reproducción audible por Piper deben comprobarse en cada entorno. Las pruebas automatizadas no demuestran por sí solas que el usuario oyó una respuesta.
-- En la validación de esta actualización, `pnpm test` pasó con **694 aprobadas y 6 omitidas**. `pnpm lint` sigue fallando globalmente: encontró 9 errores y 4 advertencias en código fuente/pruebas, pendientes de corregir y no causados por este cambio de documentación.
+- En la validación de preparación de `v0.1.0`, `pnpm test` pasó con **694 aprobadas y 6 omitidas**, y `pnpm lint` pasó sin errores ni advertencias. El usuario confirmó manualmente una conversación de voz completa con micrófono, Parakeet, Ollama, Piper y reproducción audible; esa validación no fue automatizada.
 - El comportamiento de control nativo de escritorio difiere entre Linux y macOS; no todas las acciones disponibles en una plataforma están disponibles en la otra.
 
 ## Desarrollo y contribuciones
